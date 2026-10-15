@@ -1,6 +1,6 @@
 {
   "name": "@emaarco/bpmn-js-data-simulation",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "Simulate BPMN processes with data in bpmn-js-token-simulation — scenarios, process variables, io mappings and gateway conditions evaluated in the engine's expression language.",
   "type": "module",
   "license": "MIT",
