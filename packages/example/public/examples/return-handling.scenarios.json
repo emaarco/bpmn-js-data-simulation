@@ -1,0 +1,17 @@
+{
+  "scenarios": [
+    {
+      "id": "like-new",
+      "name": "Returned in time, like new",
+      "description": "The first gateway evaluates JUEL. The second uses JavaScript conditions, so you choose its flow by click.",
+      "variables": { "orderId": "O-5531", "daysSincePurchase": 12 },
+      "taskResults": { "Task_Inspect": { "grade": "like new" } }
+    },
+    {
+      "id": "too-late",
+      "name": "Returned too late",
+      "description": "45 days after purchase: the default flow declines the return.",
+      "variables": { "orderId": "O-5532", "daysSincePurchase": 45 }
+    }
+  ]
+}

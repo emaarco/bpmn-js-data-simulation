@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:camunda="http://camunda.org/schema/1.0/bpmn" id="Definitions_Return" targetNamespace="http://bpmn.io/schema/bpmn">
+  <bpmn:process id="Process_Return" name="Return handling" isExecutable="true" camunda:historyTimeToLive="P30D">
+    <bpmn:startEvent id="Start" name="Return requested" />
+    <bpmn:sequenceFlow id="Flow_Start" sourceRef="Start" targetRef="Gateway_Window" />
+    <bpmn:exclusiveGateway id="Gateway_Window" name="Within return window?" default="Flow_Late" />
+    <bpmn:sequenceFlow id="Flow_InTime" name="yes" sourceRef="Gateway_Window" targetRef="Task_Inspect">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${daysSincePurchase le 30}</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_Late" name="no" sourceRef="Gateway_Window" targetRef="End_Declined" />
+    <bpmn:userTask id="Task_Inspect" name="Inspect returned bike" camunda:assignee="workshop">
+      <bpmn:extensionElements>
+        <camunda:inputOutput>
+          <camunda:outputParameter name="condition">${grade}</camunda:outputParameter>
+        </camunda:inputOutput>
+      </bpmn:extensionElements>
+    </bpmn:userTask>
+    <bpmn:sequenceFlow id="Flow_ToCondition" sourceRef="Task_Inspect" targetRef="Gateway_Condition" />
+    <bpmn:exclusiveGateway id="Gateway_Condition" name="Resellable?" />
+    <bpmn:sequenceFlow id="Flow_Refund" name="full refund" sourceRef="Gateway_Condition" targetRef="Task_Refund">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression" language="javascript">execution.getVariable("condition") === "like new"</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_Partial" name="partial refund" sourceRef="Gateway_Condition" targetRef="Task_Partial">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression" language="javascript">execution.getVariable("condition") !== "like new"</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:serviceTask id="Task_Refund" name="Refund full price" camunda:type="external" camunda:topic="refund" />
+    <bpmn:sequenceFlow id="Flow_RefundDone" sourceRef="Task_Refund" targetRef="End_Refunded" />
+    <bpmn:serviceTask id="Task_Partial" name="Refund minus wear" camunda:type="external" camunda:topic="refund-partial" />
+    <bpmn:sequenceFlow id="Flow_PartialDone" sourceRef="Task_Partial" targetRef="End_Refunded" />
+    <bpmn:endEvent id="End_Refunded" name="Return refunded" />
+    <bpmn:endEvent id="End_Declined" name="Return declined" />
+  </bpmn:process>
+  <bpmndi:BPMNDiagram id="BPMNDiagram_1">
+    <bpmndi:BPMNPlane id="BPMNPlane_1" bpmnElement="Process_Return">
+      <bpmndi:BPMNShape id="Start_di" bpmnElement="Start">
+        <dc:Bounds x="162" y="242" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Gateway_Window_di" bpmnElement="Gateway_Window">
+        <dc:Bounds x="295" y="235" width="50" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="330" y="205" width="140" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_Inspect_di" bpmnElement="Task_Inspect">
+        <dc:Bounds x="410" y="220" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Gateway_Condition_di" bpmnElement="Gateway_Condition">
+        <dc:Bounds x="575" y="235" width="50" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="610" y="205" width="140" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_Refund_di" bpmnElement="Task_Refund">
+        <dc:Bounds x="690" y="220" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_Partial_di" bpmnElement="Task_Partial">
+        <dc:Bounds x="690" y="340" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="End_Refunded_di" bpmnElement="End_Refunded">
+        <dc:Bounds x="862" y="242" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="End_Declined_di" bpmnElement="End_Declined">
+        <dc:Bounds x="442" y="362" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Flow_Start_di" bpmnElement="Flow_Start">
+        <di:waypoint x="198" y="260" />
+        <di:waypoint x="295" y="260" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_InTime_di" bpmnElement="Flow_InTime">
+        <di:waypoint x="345" y="260" />
+        <di:waypoint x="410" y="260" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_Late_di" bpmnElement="Flow_Late">
+        <di:waypoint x="320" y="285" />
+        <di:waypoint x="320" y="380" />
+        <di:waypoint x="442" y="380" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_ToCondition_di" bpmnElement="Flow_ToCondition">
+        <di:waypoint x="510" y="260" />
+        <di:waypoint x="575" y="260" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_Refund_di" bpmnElement="Flow_Refund">
+        <di:waypoint x="625" y="260" />
+        <di:waypoint x="690" y="260" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_Partial_di" bpmnElement="Flow_Partial">
+        <di:waypoint x="600" y="285" />
+        <di:waypoint x="600" y="380" />
+        <di:waypoint x="690" y="380" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_RefundDone_di" bpmnElement="Flow_RefundDone">
+        <di:waypoint x="790" y="260" />
+        <di:waypoint x="862" y="260" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_PartialDone_di" bpmnElement="Flow_PartialDone">
+        <di:waypoint x="790" y="380" />
+        <di:waypoint x="880" y="380" />
+        <di:waypoint x="880" y="278" />
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>

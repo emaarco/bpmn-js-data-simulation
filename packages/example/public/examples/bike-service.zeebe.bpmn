@@ -1,0 +1,157 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:zeebe="http://camunda.org/schema/zeebe/1.0" id="Definitions_BikeService" targetNamespace="http://bpmn.io/schema/bpmn">
+  <bpmn:process id="Process_BikeService" name="Bike service" isExecutable="true">
+    <bpmn:startEvent id="Start" name="Bike dropped off" />
+    <bpmn:sequenceFlow id="Flow_Start" sourceRef="Start" targetRef="Task_Inspect" />
+    <bpmn:userTask id="Task_Inspect" name="Inspect bike">
+      <bpmn:extensionElements>
+        <zeebe:userTask />
+        <zeebe:ioMapping>
+          <zeebe:output source="=findings.brakes = &#34;worn&#34;" target="brakesWorn" />
+          <zeebe:output source="=findings.tireDepth" target="tireDepth" />
+        </zeebe:ioMapping>
+      </bpmn:extensionElements>
+    </bpmn:userTask>
+    <bpmn:sequenceFlow id="Flow_ToRepairs" sourceRef="Task_Inspect" targetRef="Gateway_Repairs" />
+    <bpmn:inclusiveGateway id="Gateway_Repairs" name="Repairs needed?" default="Flow_NoRepairs" />
+    <bpmn:sequenceFlow id="Flow_Brakes" name="brakes" sourceRef="Gateway_Repairs" targetRef="Task_Brakes">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">=brakesWorn</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_Tires" name="tires" sourceRef="Gateway_Repairs" targetRef="Task_Tires">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">=tireDepth &lt; 1.6</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_NoRepairs" name="none" sourceRef="Gateway_Repairs" targetRef="Gateway_RepairsDone" />
+    <bpmn:serviceTask id="Task_Brakes" name="Replace brake pads">
+      <bpmn:extensionElements>
+        <zeebe:taskDefinition type="replace-brake-pads" />
+      </bpmn:extensionElements>
+    </bpmn:serviceTask>
+    <bpmn:sequenceFlow id="Flow_BrakesDone" sourceRef="Task_Brakes" targetRef="Gateway_RepairsDone" />
+    <bpmn:serviceTask id="Task_Tires" name="Replace tires">
+      <bpmn:extensionElements>
+        <zeebe:taskDefinition type="replace-tires" />
+      </bpmn:extensionElements>
+    </bpmn:serviceTask>
+    <bpmn:sequenceFlow id="Flow_TiresDone" sourceRef="Task_Tires" targetRef="Gateway_RepairsDone" />
+    <bpmn:inclusiveGateway id="Gateway_RepairsDone" />
+    <bpmn:sequenceFlow id="Flow_ToInvoice" sourceRef="Gateway_RepairsDone" targetRef="Task_Invoice" />
+    <bpmn:serviceTask id="Task_Invoice" name="Calculate invoice">
+      <bpmn:extensionElements>
+        <zeebe:taskDefinition type="calculate-invoice" />
+        <zeebe:ioMapping>
+          <zeebe:output source="=49 + (if brakesWorn then 35 else 0) + (if tireDepth &lt; 1.6 then 120 else 0)" target="invoiceTotal" />
+        </zeebe:ioMapping>
+      </bpmn:extensionElements>
+    </bpmn:serviceTask>
+    <bpmn:sequenceFlow id="Flow_ToApproval" sourceRef="Task_Invoice" targetRef="Gateway_Approval" />
+    <bpmn:exclusiveGateway id="Gateway_Approval" name="Invoice above limit?" default="Flow_WithinLimit" />
+    <bpmn:sequenceFlow id="Flow_AboveLimit" name="yes" sourceRef="Gateway_Approval" targetRef="Task_AskCustomer">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">=invoiceTotal &gt; approvalLimit</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_WithinLimit" name="no" sourceRef="Gateway_Approval" targetRef="End_Ready" />
+    <bpmn:userTask id="Task_AskCustomer" name="Ask customer for approval">
+      <bpmn:extensionElements>
+        <zeebe:userTask />
+      </bpmn:extensionElements>
+    </bpmn:userTask>
+    <bpmn:sequenceFlow id="Flow_Asked" sourceRef="Task_AskCustomer" targetRef="End_Ready" />
+    <bpmn:endEvent id="End_Ready" name="Bike ready for pick-up" />
+  </bpmn:process>
+  <bpmndi:BPMNDiagram id="BPMNDiagram_1">
+    <bpmndi:BPMNPlane id="BPMNPlane_1" bpmnElement="Process_BikeService">
+      <bpmndi:BPMNShape id="Start_di" bpmnElement="Start">
+        <dc:Bounds x="162" y="242" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_Inspect_di" bpmnElement="Task_Inspect">
+        <dc:Bounds x="270" y="220" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Gateway_Repairs_di" bpmnElement="Gateway_Repairs">
+        <dc:Bounds x="435" y="235" width="50" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="470" y="205" width="140" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_Brakes_di" bpmnElement="Task_Brakes">
+        <dc:Bounds x="550" y="100" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_Tires_di" bpmnElement="Task_Tires">
+        <dc:Bounds x="550" y="340" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Gateway_RepairsDone_di" bpmnElement="Gateway_RepairsDone">
+        <dc:Bounds x="715" y="235" width="50" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="750" y="205" width="140" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_Invoice_di" bpmnElement="Task_Invoice">
+        <dc:Bounds x="830" y="220" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Gateway_Approval_di" bpmnElement="Gateway_Approval">
+        <dc:Bounds x="995" y="235" width="50" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1030" y="205" width="140" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_AskCustomer_di" bpmnElement="Task_AskCustomer">
+        <dc:Bounds x="1110" y="100" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="End_Ready_di" bpmnElement="End_Ready">
+        <dc:Bounds x="1282" y="242" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Flow_Start_di" bpmnElement="Flow_Start">
+        <di:waypoint x="198" y="260" />
+        <di:waypoint x="270" y="260" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_ToRepairs_di" bpmnElement="Flow_ToRepairs">
+        <di:waypoint x="370" y="260" />
+        <di:waypoint x="435" y="260" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_Brakes_di" bpmnElement="Flow_Brakes">
+        <di:waypoint x="460" y="235" />
+        <di:waypoint x="460" y="140" />
+        <di:waypoint x="550" y="140" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_Tires_di" bpmnElement="Flow_Tires">
+        <di:waypoint x="460" y="285" />
+        <di:waypoint x="460" y="380" />
+        <di:waypoint x="550" y="380" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_NoRepairs_di" bpmnElement="Flow_NoRepairs">
+        <di:waypoint x="485" y="260" />
+        <di:waypoint x="715" y="260" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_BrakesDone_di" bpmnElement="Flow_BrakesDone">
+        <di:waypoint x="650" y="140" />
+        <di:waypoint x="740" y="140" />
+        <di:waypoint x="740" y="235" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_TiresDone_di" bpmnElement="Flow_TiresDone">
+        <di:waypoint x="650" y="380" />
+        <di:waypoint x="740" y="380" />
+        <di:waypoint x="740" y="285" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_ToInvoice_di" bpmnElement="Flow_ToInvoice">
+        <di:waypoint x="765" y="260" />
+        <di:waypoint x="830" y="260" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_ToApproval_di" bpmnElement="Flow_ToApproval">
+        <di:waypoint x="930" y="260" />
+        <di:waypoint x="995" y="260" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_AboveLimit_di" bpmnElement="Flow_AboveLimit">
+        <di:waypoint x="1020" y="235" />
+        <di:waypoint x="1020" y="140" />
+        <di:waypoint x="1110" y="140" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_WithinLimit_di" bpmnElement="Flow_WithinLimit">
+        <di:waypoint x="1045" y="260" />
+        <di:waypoint x="1282" y="260" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_Asked_di" bpmnElement="Flow_Asked">
+        <di:waypoint x="1210" y="140" />
+        <di:waypoint x="1300" y="140" />
+        <di:waypoint x="1300" y="242" />
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>
