@@ -1,0 +1,15 @@
+"$schema" = "https://conductor.build/schemas/settings.repo.schema.json"
+
+[scripts]
+setup = "npm install && npm run build"
+run_mode = "concurrent"
+
+# Example bpmn-js modeler (Vite). Bound to the workspace's assigned port.
+[scripts.run.dev]
+command = "npm run dev -w @emaarco/bpmn-js-data-simulation-example -- --port $CONDUCTOR_PORT"
+icon = "globe"
+
+# Library unit tests in watch mode (Vitest).
+[scripts.run.test]
+command = "npm run test:watch -w @emaarco/bpmn-js-data-simulation"
+icon = "test-tube"

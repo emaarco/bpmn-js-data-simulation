@@ -1,0 +1,127 @@
+name: Release
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: Validate build & publish without releasing
+        type: boolean
+        default: false
+      publish:
+        description: Publish the current package.json version (re-run a failed release)
+        type: boolean
+        default: false
+      beta_version:
+        description: Publish the selected branch as this beta version (dist-tag beta), e.g. 0.2.0-beta.0
+        type: string
+        default: ''
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  release-please:
+    if: github.event_name != 'workflow_dispatch' || (!inputs.dry_run && !inputs.publish && inputs.beta_version == '')
+    runs-on: ubuntu-latest
+    outputs:
+      releases_created: ${{ steps.release.outputs.releases_created }}
+    steps:
+      # A GitHub App token (not the default GITHUB_TOKEN) so the release PR
+      # triggers CI and works with branch protection.
+      - uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        id: app-token
+        with:
+          client-id: ${{ vars.RELEASE_PLEASE_APP_CLIENT_ID }}
+          private-key: ${{ secrets.RELEASE_PLEASE_APP_PRIVATE_KEY }}
+
+      - id: release
+        uses: googleapis/release-please-action@45996ed1f6d02564a971a2fa1b5860e934307cf7 # v5.0.0
+        with:
+          token: ${{ steps.app-token.outputs.token }}
+          config-file: release-please-config.json
+          manifest-file: .release-please-manifest.json
+
+  publish:
+    needs: release-please
+    # Runs on a real release, or on-demand via workflow_dispatch to re-publish the
+    # current package.json version (release-please is skipped in that case).
+    if: >-
+      always() && needs.release-please.result != 'failure' && needs.release-please.result != 'cancelled'
+      && (needs.release-please.outputs.releases_created == 'true'
+      || (github.event_name == 'workflow_dispatch' && inputs.publish))
+    runs-on: ubuntu-latest
+    environment: npm
+    permissions:
+      contents: read
+      id-token: write # OIDC — tokenless npm publish + provenance
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22
+          registry-url: https://registry.npmjs.org
+          cache: npm
+
+      # Node 22 ships npm 10.x; OIDC trusted publishing needs npm >= 11.5.1.
+      - run: npm install -g npm@latest
+      - run: npm ci
+      - run: npm run build
+
+      - name: Publish @emaarco/bpmn-js-data-simulation
+        run: |
+          dir="packages/bpmn-js-data-simulation"
+          name="$(node -p "require('./$dir/package.json').name")"
+          version="$(node -p "require('./$dir/package.json').version")"
+          if npm view "$name@$version" version > /dev/null 2>&1; then
+            echo "$name@$version already published — skipping"
+          else
+            npm publish -w "$dir" --provenance --access public
+          fi
+
+  publish-beta:
+    if: github.event_name == 'workflow_dispatch' && inputs.beta_version != ''
+    runs-on: ubuntu-latest
+    environment: npm
+    permissions:
+      contents: read
+      id-token: write
+    env:
+      PACKAGE_DIR: packages/bpmn-js-data-simulation
+      BETA_VERSION: ${{ inputs.beta_version }}
+    steps:
+      - name: Refuse a version that is not a beta
+        run: |
+          if ! [[ "$BETA_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+-beta\.[0-9]+$ ]]; then
+            echo "::error::'$BETA_VERSION' is not a beta version, expected e.g. 0.2.0-beta.0"
+            exit 1
+          fi
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22
+          registry-url: https://registry.npmjs.org
+          cache: npm
+      - run: npm install -g npm@latest
+      - run: npm ci
+      - run: npm pkg set version="$BETA_VERSION" -w "$PACKAGE_DIR"
+      - run: npm run build
+      - name: Publish the beta
+        run: npm publish -w "$PACKAGE_DIR" --provenance --access public --tag beta ${{ inputs.dry_run && '--dry-run' || '' }}
+
+  dry-run:
+    if: github.event_name == 'workflow_dispatch' && inputs.dry_run && inputs.beta_version == ''
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22
+          registry-url: https://registry.npmjs.org
+          cache: npm
+      - run: npm install -g npm@latest
+      - run: npm ci
+      - run: npm run build
+      - run: npm publish -w packages/bpmn-js-data-simulation --access public --dry-run

@@ -1,0 +1,55 @@
+{
+  "scenarios": [
+    {
+      "id": "full-service",
+      "name": "Brakes and tires",
+      "description": "Brakes and tires are worn: both repairs run in parallel and the invoice of 204 € needs the customer's approval.",
+      "variables": {
+        "bikeId": "MV-1187",
+        "approvalLimit": 150
+      },
+      "taskResults": {
+        "Task_Inspect": {
+          "findings": {
+            "brakes": "worn",
+            "tireDepth": 1.2
+          }
+        }
+      }
+    },
+    {
+      "id": "brakes-only",
+      "name": "Brakes only",
+      "description": "Only the brake pads are worn, the invoice stays below the limit.",
+      "variables": {
+        "bikeId": "MV-2210",
+        "approvalLimit": 150
+      },
+      "taskResults": {
+        "Task_Inspect": {
+          "findings": {
+            "brakes": "worn",
+            "tireDepth": 2.4
+          }
+        }
+      }
+    },
+    {
+      "id": "no-repairs",
+      "name": "Nothing to repair",
+      "description": "No condition is true, so the inclusive gateway takes its default flow.",
+      "variables": {
+        "bikeId": "MV-3302",
+        "approvalLimit": 150
+      },
+      "taskResults": {
+        "Task_Inspect": {
+          "findings": {
+            "brakes": "ok",
+            "tireDepth": 3.1
+          }
+        }
+      }
+    }
+  ]
+}

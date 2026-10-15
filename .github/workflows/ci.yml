@@ -1,0 +1,66 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    name: CI (Node ${{ matrix.node-version }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        node-version: [22, 24]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Setup Node ${{ matrix.node-version }}
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Unused files/deps/exports (knip)
+        run: npm run knip
+
+      - name: Architecture check (dependency-cruiser)
+        # Dev-time architecture check — run once, on the lowest supported Node.
+        if: matrix.node-version == 22
+        run: npm run lint:deps
+
+      - name: Unit tests
+        run: npm test
+
+      - name: Build library
+        run: npm run build
+
+      - name: Distro smoke test
+        run: npm run test:distro -w @emaarco/bpmn-js-data-simulation
+
+      - name: Consumer test (packed dist in a fresh project)
+        run: npm run test:consumer -w @emaarco/bpmn-js-data-simulation
+
+      # E2E drives a real browser and is Node-version-agnostic — run it once, on 22.
+      - name: Install Playwright browser
+        if: matrix.node-version == 22
+        run: npx playwright install --with-deps chromium
+        working-directory: packages/example
+
+      - name: E2E tests
+        if: matrix.node-version == 22
+        run: npm run test:e2e

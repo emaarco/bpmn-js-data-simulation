@@ -1,0 +1,34 @@
+{
+  "name": "bpmn-js-data-simulation-monorepo",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Monorepo for @emaarco/bpmn-js-data-simulation — a data-driven add-on for bpmn-js-token-simulation",
+  "type": "module",
+  "license": "MIT",
+  "author": "Marco Schäck (https://github.com/emaarco)",
+  "engines": {
+    "node": ">=22"
+  },
+  "workspaces": [
+    "packages/bpmn-js-data-simulation",
+    "packages/example"
+  ],
+  "scripts": {
+    "build": "npm run build -w @emaarco/bpmn-js-data-simulation",
+    "dev": "npm run dev -w @emaarco/bpmn-js-data-simulation-example",
+    "test": "npm run test --workspaces --if-present",
+    "test:e2e": "npm run test:e2e -w @emaarco/bpmn-js-data-simulation-example --if-present",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "lint": "oxlint",
+    "lint:deps": "npm run lint:deps -w @emaarco/bpmn-js-data-simulation",
+    "knip": "knip",
+    "knip:fix": "knip --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
+  },
+  "devDependencies": {
+    "knip": "6.41.0",
+    "oxlint": "1.88.0",
+    "prettier": "3.9.10"
+  }
+}

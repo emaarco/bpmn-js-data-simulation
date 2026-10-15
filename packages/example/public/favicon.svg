@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024" role="img" aria-label="BPMN Data Simulation">
+  <defs>
+    <linearGradient id="glyphGrad" gradientUnits="userSpaceOnUse" x1="512" y1="260" x2="512" y2="770">
+      <stop offset="0" stop-color="#FFFFFF"/>
+      <stop offset="0.55" stop-color="#FDFCFB"/>
+      <stop offset="1" stop-color="#E9E6E3"/>
+    </linearGradient>
+    <filter id="soft" x="-25%" y="-25%" width="150%" height="150%">
+      <feDropShadow dx="0" dy="14" stdDeviation="18" flood-color="#0E2470" flood-opacity="0.32"/>
+    </filter>
+  </defs>
+  <rect id="bg" x="0" y="0" width="1024" height="1024" rx="0" ry="0" fill="#335DE5"/>
+  <g id="glyph" filter="url(#soft)" fill="url(#glyphGrad)" stroke="url(#glyphGrad)" stroke-width="52" stroke-linecap="round" stroke-linejoin="round">
+    <path fill="none" d="M 392 312 L 592 512 L 392 712 L 192 512 Z"/>
+    <circle cx="392" cy="512" r="58" stroke="none"/>
+    <path d="M 700 428 L 838 512 L 700 596 Z" stroke-width="48"/>
+  </g>
+</svg>
