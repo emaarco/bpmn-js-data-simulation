@@ -2,7 +2,7 @@ import { cpSync, mkdirSync, readFileSync } from 'node:fs'
 import { dirname, resolve as resolvePath } from 'node:path'
 import commonjs from '@rollup/plugin-commonjs'
 import resolve from '@rollup/plugin-node-resolve'
-import typescript from '@rollup/plugin-typescript'
+import esbuild from 'rollup-plugin-esbuild'
 
 function isExternal(id) {
   return /^(bpmn-js|bpmn-js-token-simulation|diagram-js|feelin)(\/|$)/.test(id)
@@ -54,7 +54,7 @@ export default {
     inlineCss,
     resolve({ browser: true, extensions: ['.ts', '.js', '.mjs'] }),
     commonjs(),
-    typescript({ tsconfig: './tsconfig.build.json', outDir: 'dist', declaration: true, declarationDir: 'dist' }),
+    esbuild({ tsconfig: './tsconfig.build.json' }),
     copyStyles,
   ],
 }
