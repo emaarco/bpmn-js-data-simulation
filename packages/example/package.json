@@ -12,7 +12,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@bpmn-io/properties-panel": "3.57.0",
+    "@bpmn-io/properties-panel": "3.57.1",
     "@emaarco/bpmn-js-data-simulation": "*",
     "bpmn-js": "18.31.0",
     "bpmn-js-properties-panel": "5.65.2",
@@ -24,7 +24,7 @@
   "devDependencies": {
     "@fontsource-variable/geist": "5.3.0",
     "@fontsource-variable/geist-mono": "5.3.0",
-    "@playwright/test": "1.64.0",
+    "@playwright/test": "1.64.1",
     "typescript": "6.0.3",
     "vite": "8.3.4"
   }
