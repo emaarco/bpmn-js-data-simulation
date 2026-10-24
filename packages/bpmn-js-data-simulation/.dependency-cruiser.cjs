@@ -43,6 +43,13 @@ module.exports = {
       to: { path: '^src/(integration|engines)/' },
     },
     {
+      name: 'utils-are-leaves',
+      comment: 'utils/ holds pure helpers; they may read the types of other layers but never their behaviour.',
+      severity: 'error',
+      from: { path: '^src/utils/' },
+      to: { path: '^src/', pathNot: '^src/(utils|styles)/', dependencyTypesNot: ['type-only'] },
+    },
+    {
       name: 'no-bpmn-io-imports',
       comment:
         'bpmn-js, diagram-js and the token simulation ship extensionless ESM that plain Node cannot load; the add-on gets their services through the injector instead.',

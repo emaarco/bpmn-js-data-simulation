@@ -1,8 +1,12 @@
 import type { RoutingDecision } from '../domain/model.js'
 import type { DecisionLogEntry, SimulationSnapshot } from '../simulation/DataSimulationStore.js'
-import { createDecisionCard, createOutcomeBadge } from '../ui/overlayContent.js'
-import { placePopover } from '../ui/popoverPlacement.js'
-import { inShadow } from '../ui/shadow.js'
+import { GatewayDecisionView } from '../simulation/GatewayDecisionView.js'
+import { DecisionCard } from '../ui/DecisionCard.js'
+import { OutcomeBadge } from '../ui/OutcomeBadge.js'
+import { badgePosition } from '../utils/badgePosition.js'
+import { gatewayOf, isGateway } from '../utils/diagramElements.js'
+import { placePopover } from '../utils/popoverPlacement.js'
+import { inShadow } from '../utils/shadow.js'
 import type { DataSimulation } from './DataSimulation.js'
 import type { Canvas, DiagramElement, ElementRegistry, EventBus, Overlays } from './tokenSimulation.js'
 
@@ -58,10 +62,7 @@ export class DataSimulationOverlays {
   }
 
   private render(): void {
-    const decisions = latestDecisionPerGateway(this.snapshot)
-    const shownPerGateway = new Map(decisions.map(entry => [entry.elementId, entry]))
-    for (const entry of latestStuckDecisionPerGateway(this.snapshot)) shownPerGateway.set(entry.elementId, entry)
-    const shown = [...shownPerGateway.values()]
+    const { decisions, shown } = new GatewayDecisionView(this.snapshot)
     const cards = shown.filter(
       ({ elementId }) => elementId === this.hoveredGatewayId || this.pinnedGatewayIds.has(elementId),
     )
@@ -100,10 +101,10 @@ export class DataSimulationOverlays {
     for (const { flow, outcome, reason } of decision.flows) {
       const connection = this.elementRegistry.get(flow.id)
       if (!connection?.waypoints) continue
-      const badge = createOutcomeBadge(outcome, reason, flow.isDefault)
+      const badge = new OutcomeBadge(outcome, reason, flow.isDefault).element
       badge.classList.add('bds-outcome--on-flow')
       this.overlays.add(connection, OUTCOME_OVERLAY, {
-        position: badgePosition(connection.waypoints),
+        position: badgePosition(connection.waypoints, BADGE_DISTANCE),
         scale: { min: BADGE_MIN_SCALE },
         html: inShadow(badge),
       })
@@ -118,7 +119,7 @@ export class DataSimulationOverlays {
         this.pinnedGatewayIds.delete(entry.elementId)
         this.render()
       }
-      const card = createDecisionCard(entry, this.pinnedGatewayIds.has(entry.elementId) ? close : undefined)
+      const card = new DecisionCard(entry, this.pinnedGatewayIds.has(entry.elementId) ? close : undefined).element
       card.classList.add('bds-popover')
       card.dataset.elementId = entry.elementId
       return [{ gateway, card }]
@@ -143,49 +144,4 @@ export class DataSimulationOverlays {
       card.style.maxHeight = maxHeight === undefined ? '' : `${maxHeight}px`
     }
   }
-}
-
-function isGateway(element: DiagramElement): boolean {
-  return element.type === 'bpmn:ExclusiveGateway' || element.type === 'bpmn:InclusiveGateway'
-}
-
-function gatewayOf(element: DiagramElement): string | undefined {
-  if (isGateway(element)) return element.id
-  if (element.type === 'bpmn:SequenceFlow' && element.source && isGateway(element.source)) return element.source.id
-  return undefined
-}
-
-function latestDecisionPerGateway({ log, selectedInstanceId }: SimulationSnapshot): DecisionLogEntry[] {
-  const latest = new Map<string, DecisionLogEntry>()
-  for (const entry of log) {
-    if (entry.kind === 'decision' && entry.instanceId === selectedInstanceId) latest.set(entry.elementId, entry)
-  }
-  return [...latest.values()]
-}
-
-function latestStuckDecisionPerGateway({ instances, log }: SimulationSnapshot): DecisionLogEntry[] {
-  const latest = new Map<string, DecisionLogEntry>()
-  for (const instance of instances) {
-    for (const { gatewayId } of instance.waiting) {
-      const decision = [...log]
-        .reverse()
-        .find(
-          (entry): entry is DecisionLogEntry =>
-            entry.kind === 'decision' && entry.instanceId === instance.id && entry.elementId === gatewayId,
-        )
-      if (decision && (latest.get(gatewayId)?.id ?? 0) < decision.id) latest.set(gatewayId, decision)
-    }
-  }
-  return [...latest.values()]
-}
-
-function badgePosition(waypoints: Array<{ x: number; y: number }>): { left: number; top: number } {
-  const [start, next] = waypoints
-  const length = Math.hypot(next.x - start.x, next.y - start.y) || 1
-  const distance = Math.min(BADGE_DISTANCE, length / 2)
-  const x = start.x + ((next.x - start.x) / length) * distance
-  const y = start.y + ((next.y - start.y) / length) * distance
-  const minX = Math.min(...waypoints.map(point => point.x))
-  const minY = Math.min(...waypoints.map(point => point.y))
-  return { left: x - minX, top: y - minY }
 }

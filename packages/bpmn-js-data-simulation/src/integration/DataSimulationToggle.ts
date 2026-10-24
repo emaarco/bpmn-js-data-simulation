@@ -1,4 +1,4 @@
-import { h } from '../ui/dom.js'
+import { h } from '../utils/dom.js'
 import type { DataSimulation } from './DataSimulation.js'
 import { type Canvas, DATA_TOGGLE_EVENT, type EventBus, TOGGLE_MODE_EVENT } from './tokenSimulation.js'
 
@@ -16,49 +16,59 @@ interface ToggleMode {
 export class DataSimulationToggle {
   static $inject = ['eventBus', 'canvas', 'toggleMode', 'dataSimulation']
 
-  constructor(eventBus: EventBus, canvas: Canvas, toggleMode: ToggleMode, dataSimulation: DataSimulation) {
-    let simulating = false
-    const button = h('button', { className: 'bds-data-toggle', type: 'button' })
-    const render = (): void => {
-      const enabled = dataSimulation.isEnabled()
-      button.innerHTML = `${LABEL} <span class="bds-data-toggle-icon">${enabled ? TOGGLE_ON : TOGGLE_OFF}</span>`
-      button.classList.toggle('active', enabled)
-      button.setAttribute('aria-pressed', String(enabled))
-    }
-    let tokenToggleObserver: ResizeObserver | undefined
-    const placeNextToTokenSimulationToggle = (): void => {
-      const container = canvas.getContainer()
-      const tokenToggle = container.querySelector<HTMLElement>('.bts-toggle-mode')
-      if (!tokenToggle) return
-      const containerBox = container.getBoundingClientRect()
-      const toggleBox = tokenToggle.getBoundingClientRect()
-      const scale = containerBox.width / container.offsetWidth || 1
-      button.style.fontSize = getComputedStyle(tokenToggle).fontSize
-      button.style.left = `${(toggleBox.right - containerBox.left) / scale + GAP}px`
-      button.style.top = `${(toggleBox.top + toggleBox.height / 2 - containerBox.top) / scale - button.offsetHeight / 2}px`
-      if (!tokenToggleObserver && typeof ResizeObserver === 'function') {
-        tokenToggleObserver = new ResizeObserver(placeNextToTokenSimulationToggle)
-        tokenToggleObserver.observe(tokenToggle)
-      }
-    }
+  private readonly button = h('button', { className: 'bds-data-toggle', type: 'button' })
+  private simulating = false
+  private tokenToggleObserver?: ResizeObserver
 
-    render()
-    canvas.getContainer().append(button)
-    button.addEventListener('click', () => dataSimulation.setEnabled(!dataSimulation.isEnabled()))
+  constructor(
+    eventBus: EventBus,
+    private readonly canvas: Canvas,
+    toggleMode: ToggleMode,
+    private readonly dataSimulation: DataSimulation,
+  ) {
+    this.render()
+    canvas.getContainer().append(this.button)
+    this.button.addEventListener('click', () => dataSimulation.setEnabled(!dataSimulation.isEnabled()))
 
     eventBus.on(TOGGLE_MODE_EVENT, ({ active }: { active: boolean }) => {
-      simulating = active
-      if (active) placeNextToTokenSimulationToggle()
+      this.simulating = active
+      if (active) this.placeNextToTokenSimulationToggle()
     })
     eventBus.on(DATA_TOGGLE_EVENT, () => {
-      render()
-      if (!simulating) return
+      this.render()
+      if (!this.simulating) return
       toggleMode.toggleMode(false)
       toggleMode.toggleMode(true)
     })
     eventBus.on('diagram.destroy', () => {
-      tokenToggleObserver?.disconnect()
-      button.remove()
+      this.tokenToggleObserver?.disconnect()
+      this.button.remove()
     })
+  }
+
+  private render(): void {
+    const enabled = this.dataSimulation.isEnabled()
+    this.button.innerHTML = `${LABEL} <span class="bds-data-toggle-icon">${enabled ? TOGGLE_ON : TOGGLE_OFF}</span>`
+    this.button.classList.toggle('active', enabled)
+    this.button.setAttribute('aria-pressed', String(enabled))
+  }
+
+  private placeNextToTokenSimulationToggle(): void {
+    const container = this.canvas.getContainer()
+    const tokenToggle = container.querySelector<HTMLElement>('.bts-toggle-mode')
+    if (!tokenToggle) return
+    const containerBox = container.getBoundingClientRect()
+    const toggleBox = tokenToggle.getBoundingClientRect()
+    const scale = containerBox.width / container.offsetWidth || 1
+    this.button.style.fontSize = getComputedStyle(tokenToggle).fontSize
+    this.button.style.left = `${(toggleBox.right - containerBox.left) / scale + GAP}px`
+    this.button.style.top = `${(toggleBox.top + toggleBox.height / 2 - containerBox.top) / scale - this.button.offsetHeight / 2}px`
+    this.observeTokenToggle(tokenToggle)
+  }
+
+  private observeTokenToggle(tokenToggle: HTMLElement): void {
+    if (this.tokenToggleObserver || typeof ResizeObserver !== 'function') return
+    this.tokenToggleObserver = new ResizeObserver(() => this.placeNextToTokenSimulationToggle())
+    this.tokenToggleObserver.observe(tokenToggle)
   }
 }

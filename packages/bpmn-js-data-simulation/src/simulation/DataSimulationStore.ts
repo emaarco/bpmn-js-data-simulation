@@ -1,5 +1,4 @@
-import type { GatewayKind, RoutingDecision, Variables } from '../domain/model.js'
-import type { Scenario } from '../domain/scenario.js'
+import type { GatewayKind, RoutingDecision, Scenario, Variables } from '../domain/model.js'
 
 export type InstanceStatus = 'running' | 'waiting' | 'completed'
 
@@ -172,7 +171,7 @@ export class DataSimulationStore {
       scenarios: this.scenarios,
       selectedScenarioId: this.selectedScenarioId,
       startVariables: this.startVariables,
-      instances: [...this.instances.values()].map(withStatus),
+      instances: [...this.instances.values()].map(instance => this.withStatus(instance)),
       selectedInstanceId: this.selectedInstanceId,
       log: this.log,
     }
@@ -194,9 +193,9 @@ export class DataSimulationStore {
     const snapshot = this.getSnapshot()
     for (const listener of [...this.listeners]) listener(snapshot)
   }
-}
 
-function withStatus(instance: InstanceState): InstanceState {
-  if (instance.status === 'completed') return instance
-  return { ...instance, status: instance.waiting.length ? 'waiting' : 'running' }
+  private withStatus(instance: InstanceState): InstanceState {
+    if (instance.status === 'completed') return instance
+    return { ...instance, status: instance.waiting.length ? 'waiting' : 'running' }
+  }
 }

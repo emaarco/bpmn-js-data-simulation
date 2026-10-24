@@ -1,7 +1,7 @@
 import type { Variables } from '../domain/model.js'
-import { isVariables } from '../domain/variables.js'
 import type { InstanceState, MappingIssueLogEntry, SimulationSnapshot } from '../simulation/DataSimulationStore.js'
-import { formatValue, h } from './dom.js'
+import { formatValue, h } from '../utils/dom.js'
+import { isVariables } from '../utils/variables.js'
 
 export interface VariablesPanelActions {
   selectInstance(instanceId: string): void
@@ -128,7 +128,7 @@ export class VariablesPanel {
     return h(
       'div',
       {},
-      h('p', { className: `bds-status bds-status--${instance.status}` }, describeStatus(instance)),
+      h('p', { className: `bds-status bds-status--${instance.status}` }, this.describeStatus(instance)),
       scenarioName ? h('p', { className: 'bds-hint' }, `Scenario: ${scenarioName}`) : null,
       entries.length
         ? h(
@@ -158,14 +158,14 @@ export class VariablesPanel {
     })
     editor.value = JSON.stringify(instance.variables, null, 2)
     const error = h('p', { className: 'bds-error', role: 'alert' })
-    showError(error, editor, '')
+    this.showError(error, editor, '')
     const applyButton = h('button', { className: 'bds-button bds-button--primary', type: 'button' }, 'Apply')
     const cancelButton = h('button', { className: 'bds-button', type: 'button' }, 'Cancel')
 
     applyButton.addEventListener('click', () => {
-      const parsed = parseVariables(editor.value)
+      const parsed = this.parseVariables(editor.value)
       if (typeof parsed === 'string') {
-        showError(error, editor, parsed)
+        this.showError(error, editor, parsed)
         return
       }
       this.editingInstanceId = undefined
@@ -186,35 +186,40 @@ export class VariablesPanel {
         entry.kind === 'mapping-issue' && entry.instanceId === selectedInstanceId,
     )
     this.issueSection.hidden = !issues.length
-    this.issueList.replaceChildren(...issues.slice().reverse().map(renderMappingIssue))
+    this.issueList.replaceChildren(
+      ...issues
+        .slice()
+        .reverse()
+        .map(issue => this.renderMappingIssue(issue)),
+    )
   }
-}
 
-function describeStatus({ processName, status, waiting }: InstanceState): string {
-  if (status !== 'waiting') return `${processName} · ${status}`
-  return `${processName} · waiting at ${waiting.map(gateway => gateway.gatewayName).join(', ')}`
-}
+  private describeStatus({ processName, status, waiting }: InstanceState): string {
+    if (status !== 'waiting') return `${processName} · ${status}`
+    return `${processName} · waiting at ${waiting.map(gateway => gateway.gatewayName).join(', ')}`
+  }
 
-function showError(error: HTMLElement, input: HTMLElement, message: string): void {
-  error.textContent = message
-  error.hidden = !message
-  input.classList.toggle('bds-input--invalid', Boolean(message))
-}
+  private showError(error: HTMLElement, input: HTMLElement, message: string): void {
+    error.textContent = message
+    error.hidden = !message
+    input.classList.toggle('bds-input--invalid', Boolean(message))
+  }
 
-function renderMappingIssue({ elementName, target, reason }: MappingIssueLogEntry): HTMLElement {
-  return h(
-    'li',
-    { className: 'bds-log-entry bds-log-entry--issue' },
-    h('div', { className: 'bds-log-title' }, elementName, h('span', { className: 'bds-tag' }, 'mapping')),
-    h('p', { className: 'bds-error' }, `${target}: ${reason}`),
-  )
-}
+  private renderMappingIssue({ elementName, target, reason }: MappingIssueLogEntry): HTMLElement {
+    return h(
+      'li',
+      { className: 'bds-log-entry bds-log-entry--issue' },
+      h('div', { className: 'bds-log-title' }, elementName, h('span', { className: 'bds-tag' }, 'mapping')),
+      h('p', { className: 'bds-error' }, `${target}: ${reason}`),
+    )
+  }
 
-function parseVariables(text: string): Variables | string {
-  try {
-    const value: unknown = JSON.parse(text || '{}')
-    return isVariables(value) ? value : 'Variables must be a JSON object'
-  } catch (error) {
-    return `Invalid JSON: ${(error as Error).message}`
+  private parseVariables(text: string): Variables | string {
+    try {
+      const value: unknown = JSON.parse(text || '{}')
+      return isVariables(value) ? value : 'Variables must be a JSON object'
+    } catch (error) {
+      return `Invalid JSON: ${(error as Error).message}`
+    }
   }
 }
