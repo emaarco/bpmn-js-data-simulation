@@ -1,5 +1,4 @@
-import type { Variables } from '../domain/model.js'
-import type { StartField } from '../domain/startFields.js'
+import type { StartField, Variables } from '../domain/model.js'
 
 export type FormValues = { ok: true; values: Record<string, unknown> } | { ok: false; reason: string }
 

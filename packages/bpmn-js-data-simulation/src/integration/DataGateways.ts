@@ -1,19 +1,14 @@
 import type { FlowEvaluation, GatewayKind, OutgoingFlow, RoutingDecision } from '../domain/model.js'
-import { routeGateway } from '../domain/routing.js'
+import { GatewayRouter } from '../domain/GatewayRouter.js'
 import type { ConditionInput, DataSimulationStore } from '../simulation/DataSimulationStore.js'
+import { elementName, findProcessInstance, is } from '../utils/diagramElements.js'
 import type { DataSimulation } from './DataSimulation.js'
-import {
-  type BehaviorContext,
-  type DiagramElement,
-  elementName,
-  findProcessInstance,
-  is,
-  type Scope,
-  type Simulator,
-} from './tokenSimulation.js'
+import type { BehaviorContext, DiagramElement, Scope, Simulator } from './tokenSimulation.js'
 
 export class DataGateways {
   static $inject = ['dataSimulation', 'dataSimulationStore', 'simulator']
+
+  private readonly router = new GatewayRouter()
 
   constructor(
     private readonly dataSimulation: DataSimulation,
@@ -69,7 +64,7 @@ export class DataGateways {
     const engine = this.dataSimulation.getEngine()
     const variables = this.dataSimulation.getVariables(scope)
     const outgoing = this.outgoingFlows(gateway)
-    const decision = routeGateway(kind, outgoing, expression => engine.evaluate(expression, variables))
+    const decision = this.router.route(kind, outgoing, expression => engine.evaluate(expression, variables))
     const names = outgoing.flatMap(flow => (flow.expression ? engine.readVariableNames(flow.expression) : []))
     const inputs = [...new Set(names)].map(name => ({ name, value: structuredClone(variables[name]) }))
     this.record(gateway, scope, kind, 'data', decision, inputs)

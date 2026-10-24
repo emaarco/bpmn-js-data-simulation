@@ -30,3 +30,35 @@ export interface RoutingDecision {
   takenFlowIds: string[]
   stuckReason?: string
 }
+
+export interface Scenario {
+  id: string
+  name: string
+  description?: string
+  variables: Variables
+  taskResults: Record<string, Variables>
+}
+
+export type StartFieldType = 'number' | 'boolean' | 'text' | 'json' | 'auto'
+
+export interface StartField {
+  name: string
+  type: StartFieldType
+  usedBy: string[]
+}
+
+export interface ElementVariableUsage {
+  elementName: string
+  conditionReads: string[]
+  inputReads: string[]
+  inputTargets: string[]
+  outputReads: string[]
+  outputTargets: string[]
+}
+
+export type FieldValue = { ok: true; value: unknown } | { ok: false; reason: string }
+
+export interface StartFieldHints {
+  examples?: Variables[]
+  taskResultNames?: string[]
+}

@@ -78,19 +78,3 @@ export interface Canvas {
 export interface ElementRegistry {
   get(id: string): DiagramElement | undefined
 }
-
-export function findProcessInstance(scope: Scope): Scope {
-  let current = scope
-  while (current.parent) current = current.parent
-  return current
-}
-
-export function elementName(element: DiagramElement): string {
-  const name = element.businessObject.name
-  return typeof name === 'string' && name.trim() ? name.trim() : element.id
-}
-
-export function is(element: DiagramElement, type: string): boolean {
-  const businessObject = element.businessObject as { $instanceOf?: (type: string) => boolean }
-  return typeof businessObject?.$instanceOf === 'function' && businessObject.$instanceOf(type)
-}

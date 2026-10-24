@@ -25,37 +25,34 @@ export class DataContextPads {
 
   constructor(
     contextPads: ContextPads,
-    dataGateways: DataGateways,
-    startForm: DataStartForm,
-    dataSimulation: DataSimulation,
+    private readonly dataGateways: DataGateways,
+    private readonly startForm: DataStartForm,
+    private readonly dataSimulation: DataSimulation,
   ) {
     for (const { handler, type } of contextPads._handlers) {
-      if (FLOW_CHOICE_TYPES.includes(type)) hideOnDataDrivenGateways(handler, dataGateways)
-      if (type === TRIGGER_TYPE) openStartFormOnProcessStart(handler, startForm, dataSimulation)
+      if (FLOW_CHOICE_TYPES.includes(type)) this.hideOnDataDrivenGateways(handler)
+      if (type === TRIGGER_TYPE) this.openStartFormOnProcessStart(handler)
     }
   }
-}
 
-function hideOnDataDrivenGateways(handler: ContextPadHandler, dataGateways: DataGateways): void {
-  const createContextPads = handler.createContextPads.bind(handler)
-  handler.createContextPads = element => (dataGateways.isDataDriven(element) ? undefined : createContextPads(element))
-}
+  private hideOnDataDrivenGateways(handler: ContextPadHandler): void {
+    const createContextPads = handler.createContextPads.bind(handler)
+    handler.createContextPads = element =>
+      this.dataGateways.isDataDriven(element) ? undefined : createContextPads(element)
+  }
 
-function openStartFormOnProcessStart(
-  handler: ContextPadHandler,
-  startForm: DataStartForm,
-  dataSimulation: DataSimulation,
-): void {
-  const createContextPads = handler.createContextPads.bind(handler)
-  handler.createContextPads = element => {
-    const pads = createContextPads(element)
-    if (!dataSimulation.isEnabled() || !startForm.isProcessStart(element)) return pads
-    return ([] as Array<ContextPad | undefined>)
-      .concat(pads)
-      .map(pad =>
-        pad?.action
-          ? { ...pad, action: (contexts: unknown) => startForm.open(element, () => pad.action!(contexts)) }
-          : pad,
-      )
+  private openStartFormOnProcessStart(handler: ContextPadHandler): void {
+    const createContextPads = handler.createContextPads.bind(handler)
+    handler.createContextPads = element => {
+      const pads = createContextPads(element)
+      if (!this.dataSimulation.isEnabled() || !this.startForm.isProcessStart(element)) return pads
+      return ([] as Array<ContextPad | undefined>)
+        .concat(pads)
+        .map(pad =>
+          pad?.action
+            ? { ...pad, action: (contexts: unknown) => this.startForm.open(element, () => pad.action!(contexts)) }
+            : pad,
+        )
+    }
   }
 }

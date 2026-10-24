@@ -39,16 +39,21 @@ npm run test:consumer -w @emaarco/bpmn-js-data-simulation  # packed build in a f
   `docs:`, `refactor:`, `test:`, `chore:`). Releases and the changelog are
   generated from them via release-please.
 - **Keep the layering intact.** The library is split into `domain/` (pure,
-  engine-neutral routing, scenarios and variables), `engines/` (one adapter per
+  engine-neutral routing, scenarios and start fields), `engines/` (one adapter per
   engine), `simulation/` (the observable store), `ui/` (plain-DOM panel) and
-  `integration/` (the bpmn-js / token-simulation modules). Imports only ever
-  point "down", and token-simulation internals stay in `integration/`;
-  `npm run lint:deps` (dependency-cruiser) enforces this in CI.
+  `integration/` (the bpmn-js / token-simulation modules), plus `utils/` for pure
+  helpers that every layer may use. Imports only ever point "down", and
+  token-simulation internals stay in `integration/`; `npm run lint:deps`
+  (dependency-cruiser) enforces this in CI.
+- **Classes first.** Behaviour lives in classes, one class per file; pure helpers
+  go to a `utils/` folder. `npm run lint` rejects top-level functions anywhere else
+  (`oxlint-plugins/architecture.mjs`).
 - **Add tests.** Routing, engines and the store are covered by unit tests, and
   `test/integration` runs the real token-simulation simulator against the
   module. Please extend them for any behavior change.
-- **Adding an engine** = one adapter under `src/engines/<engine>/` implementing
-  `EngineAdapter`, registered in `src/engines/index.ts`, with tests against a
+- **Adding an engine** = one class under `src/engines/<engine>/` implementing
+  `EngineAdapter`, instantiated in `src/engines/engines.ts` and registered in
+  `src/engines/EngineRegistry.ts`, with tests against a
   fixture in `test/fixtures/`.
 
 ## Betas

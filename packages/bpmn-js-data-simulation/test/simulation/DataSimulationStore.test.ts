@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import type { Scenario } from '../../src/domain/scenario'
+import type { Scenario } from '../../src/domain/model'
 import { DataSimulationStore } from '../../src/simulation/DataSimulationStore'
 
 const scenarios: Scenario[] = [

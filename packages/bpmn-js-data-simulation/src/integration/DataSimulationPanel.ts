@@ -1,5 +1,5 @@
-import { inShadow } from '../ui/shadow.js'
 import { VariablesPanel } from '../ui/VariablesPanel.js'
+import { inShadow } from '../utils/shadow.js'
 import type { DataSimulation } from './DataSimulation.js'
 import { type Canvas, DATA_TOGGLE_EVENT, type EventBus, TOGGLE_MODE_EVENT } from './tokenSimulation.js'
 
@@ -12,27 +12,35 @@ interface TokenSimulationPalette {
 export class DataSimulationPanel {
   static $inject = ['eventBus', 'canvas', 'tokenSimulationPalette', 'dataSimulation']
 
-  constructor(eventBus: EventBus, canvas: Canvas, palette: TokenSimulationPalette, dataSimulation: DataSimulation) {
-    const panel = new VariablesPanel({
+  private readonly panel: VariablesPanel
+
+  constructor(
+    eventBus: EventBus,
+    canvas: Canvas,
+    palette: TokenSimulationPalette,
+    private readonly dataSimulation: DataSimulation,
+  ) {
+    this.panel = new VariablesPanel({
       selectInstance: instanceId => dataSimulation.selectInstance(instanceId),
       setInstanceVariables: (instanceId, variables) => dataSimulation.setInstanceVariables(instanceId, variables),
     })
-    panel.render(dataSimulation.getSnapshot())
-    const host = inShadow(panel.element)
+    this.panel.render(dataSimulation.getSnapshot())
+    const host = inShadow(this.panel.element)
     canvas.getContainer().append(host)
-    palette.addEntry(panel.paletteEntry, PALETTE_INDEX)
-    const showPaletteEntry = (): void => {
-      panel.paletteEntry.hidden = !dataSimulation.isEnabled()
-    }
-    showPaletteEntry()
+    palette.addEntry(this.panel.paletteEntry, PALETTE_INDEX)
+    this.showPaletteEntry()
 
-    const unsubscribe = dataSimulation.subscribe(snapshot => panel.render(snapshot))
-    eventBus.on(TOGGLE_MODE_EVENT, () => panel.toggle(false))
-    eventBus.on(DATA_TOGGLE_EVENT, showPaletteEntry)
+    const unsubscribe = dataSimulation.subscribe(snapshot => this.panel.render(snapshot))
+    eventBus.on(TOGGLE_MODE_EVENT, () => this.panel.toggle(false))
+    eventBus.on(DATA_TOGGLE_EVENT, () => this.showPaletteEntry())
     eventBus.on('diagram.destroy', () => {
       unsubscribe()
       host.remove()
-      panel.paletteEntry.remove()
+      this.panel.paletteEntry.remove()
     })
+  }
+
+  private showPaletteEntry(): void {
+    this.panel.paletteEntry.hidden = !this.dataSimulation.isEnabled()
   }
 }

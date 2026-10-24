@@ -1,8 +1,8 @@
 // @vitest-environment jsdom
 import { describe, expect, it, vi } from 'vitest'
-import type { StartField } from '../../src/domain/startFields'
-import { simpleStartFormRenderer } from '../../src/ui/SimpleStartForm'
-import { openStartDialog, type StartDialogOptions } from '../../src/ui/StartDialog'
+import type { StartField } from '../../src/domain/model'
+import { SimpleStartFormRenderer } from '../../src/ui/SimpleStartFormRenderer'
+import { StartDialog, type StartDialogOptions } from '../../src/ui/StartDialog'
 
 const fields: StartField[] = [
   { name: 'orderTotal', type: 'number', usedBy: ['Credit OK?'] },
@@ -14,7 +14,7 @@ function open(overrides: Partial<StartDialogOptions> = {}) {
   const container = document.createElement('div')
   document.body.append(container)
   const onStart = vi.fn()
-  openStartDialog(container, {
+  new StartDialog({
     processName: 'Bike order',
     engineLabel: 'Zeebe · FEEL',
     scenarios: [
@@ -30,10 +30,10 @@ function open(overrides: Partial<StartDialogOptions> = {}) {
     selectedScenarioId: 'small',
     startVariables: { orderTotal: 1290, insurance: true, bikeId: 'MV-1' },
     fieldsFor: () => fields,
-    renderer: simpleStartFormRenderer,
+    renderer: new SimpleStartFormRenderer(),
     onStart,
     ...overrides,
-  })
+  }).open(container)
   const query = <T extends Element>(selector: string) => container.querySelector<T>(selector)!
   const submit = () => query<HTMLFormElement>('.bds-dialog').requestSubmit()
   return { container, onStart, query, submit }

@@ -4,7 +4,17 @@ import { createRequire } from 'node:module'
 
 const require = createRequire(import.meta.url)
 
-const expectedFunctions = ['routeGateway', 'parseScenarios', 'resolveEngine', 'ScenarioError', 'DataSimulationStore']
+const expectedClasses = [
+  'GatewayRouter',
+  'ScenarioParser',
+  'ScenarioError',
+  'StartFieldCodec',
+  'EngineRegistry',
+  'ZeebeEngine',
+  'Camunda7Engine',
+  'DataSimulationStore',
+  'SimpleStartFormRenderer',
+]
 const expectedEngines = ['zeebeEngine', 'camunda7Engine']
 
 const esm = await import('../../dist/index.js')
@@ -14,7 +24,7 @@ for (const [label, bundle] of [
   ['ESM', esm],
   ['CJS', cjs],
 ]) {
-  for (const name of expectedFunctions) {
+  for (const name of expectedClasses) {
     assert.equal(typeof bundle[name], 'function', `${label} bundle is missing export "${name}"`)
   }
   for (const name of expectedEngines) {

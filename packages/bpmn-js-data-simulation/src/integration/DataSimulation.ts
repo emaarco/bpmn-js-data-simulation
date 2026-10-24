@@ -1,16 +1,15 @@
-import type { Mapping, Variables } from '../domain/model.js'
-import { parseScenarios } from '../domain/scenario.js'
-import { resolveEngine } from '../engines/index.js'
+import type { Variables } from '../domain/model.js'
+import { ScenarioParser } from '../domain/ScenarioParser.js'
+import { EngineRegistry } from '../engines/EngineRegistry.js'
 import type { EngineAdapter, EngineId } from '../engines/types.js'
 import type { DataSimulationStore, SimulationListener, SimulationSnapshot } from '../simulation/DataSimulationStore.js'
 import type { StartFormRenderer } from '../ui/startForm.js'
+import { elementName, findProcessInstance, is } from '../utils/diagramElements.js'
+import { IoMappings } from './IoMappings.js'
 import {
   DATA_TOGGLE_EVENT,
   type DiagramElement,
-  elementName,
   type EventBus,
-  findProcessInstance,
-  is,
   RESET_SIMULATION_EVENT,
   SCOPE_CREATE_EVENT,
   SCOPE_DESTROYED_EVENT,
@@ -30,6 +29,8 @@ export class DataSimulation {
   static $inject = ['config.dataSimulation', 'eventBus', 'dataSimulationStore']
 
   private readonly engine: EngineAdapter
+  private readonly ioMappings: IoMappings
+  private readonly scenarioParser = new ScenarioParser()
   private enabled: boolean
 
   constructor(
@@ -37,7 +38,8 @@ export class DataSimulation {
     private readonly eventBus: EventBus,
     private readonly store: DataSimulationStore,
   ) {
-    this.engine = resolveEngine(config?.engine ?? 'zeebe')
+    this.engine = new EngineRegistry().resolve(config?.engine ?? 'zeebe')
+    this.ioMappings = new IoMappings(this.engine, store)
     this.enabled = config?.enabled ?? true
     this.store.setEngine(this.engine.label, this.engine.expressionLanguage)
     if (config?.scenarios !== undefined) this.setScenarios(config.scenarios)
@@ -69,7 +71,7 @@ export class DataSimulation {
   }
 
   setScenarios(input: unknown): void {
-    this.store.setScenarios(parseScenarios(input))
+    this.store.setScenarios(this.scenarioParser.parse(input))
   }
 
   selectScenario(scenarioId: string | null): void {
@@ -109,57 +111,6 @@ export class DataSimulation {
   private applyMappings(element: DiagramElement, scope: Scope): void {
     if (!is(element, 'bpmn:FlowNode') || scope.failed || scope.canceled) return
     const instanceId = findProcessInstance(scope).id
-    if (!this.store.hasInstance(instanceId)) return
-
-    const inputs = this.engine.readInputMappings(element.businessObject)
-    const outputs = this.engine.readOutputMappings(element.businessObject)
-    const taskResult = this.store.getTaskResult(instanceId, element.id)
-    if (!inputs.length && !outputs.length && !taskResult) return
-
-    const processVariables = this.store.getVariables(instanceId)
-    const localVariables = this.evaluateMappings(element, instanceId, inputs, {}, current => ({
-      ...processVariables,
-      ...current,
-    }))
-    const context = { ...processVariables, ...localVariables, ...taskResult }
-
-    const propagatesTaskResult = taskResult && (this.engine.taskResultPropagation === 'always' || !outputs.length)
-    const withTaskResult = propagatesTaskResult
-      ? { ...processVariables, ...withoutKeys(taskResult, Object.keys(localVariables)) }
-      : processVariables
-    this.store.setVariables(
-      instanceId,
-      this.evaluateMappings(element, instanceId, outputs, withTaskResult, () => context),
-    )
+    if (this.store.hasInstance(instanceId)) this.ioMappings.apply(element, instanceId)
   }
-
-  private evaluateMappings(
-    element: DiagramElement,
-    instanceId: string,
-    mappings: Mapping[],
-    target: Variables,
-    contextOf: (current: Variables) => Variables,
-  ): Variables {
-    let result = target
-    for (const mapping of mappings) {
-      const evaluation = this.engine.evaluate(mapping.source, contextOf(result))
-      if (evaluation.ok) {
-        result = this.engine.writeVariable(result, mapping.target, evaluation.value)
-      } else {
-        this.store.record({
-          kind: 'mapping-issue',
-          instanceId,
-          elementId: element.id,
-          elementName: elementName(element),
-          target: mapping.target,
-          reason: evaluation.reason,
-        })
-      }
-    }
-    return result
-  }
-}
-
-function withoutKeys(variables: Variables, keys: string[]): Variables {
-  return Object.fromEntries(Object.entries(variables).filter(([key]) => !keys.includes(key)))
 }

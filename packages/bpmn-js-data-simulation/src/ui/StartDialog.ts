@@ -1,7 +1,6 @@
-import type { Variables } from '../domain/model.js'
-import type { Scenario } from '../domain/scenario.js'
-import { applyFieldValues, type StartField } from '../domain/startFields.js'
-import { h } from './dom.js'
+import type { Scenario, StartField, Variables } from '../domain/model.js'
+import { StartFieldCodec } from '../domain/StartFieldCodec.js'
+import { h } from '../utils/dom.js'
 import type { RenderedStartForm, StartFormRenderer } from './startForm.js'
 
 export interface StartDialogOptions {
@@ -17,106 +16,140 @@ export interface StartDialogOptions {
 
 const NO_SCENARIO = ''
 
-export function openStartDialog(container: ParentNode, options: StartDialogOptions): () => void {
-  const { scenarios, renderer } = options
-  let baseVariables = options.startVariables
-
-  const scenarioSelect = h('select', { className: 'bds-input bds-scenario-select', 'aria-label': 'Scenario' })
-  scenarioSelect.append(
-    h('option', { value: NO_SCENARIO }, 'No scenario'),
-    ...scenarios.map(scenario => h('option', { value: scenario.id }, scenario.name)),
+export class StartDialog {
+  private readonly codec = new StartFieldCodec()
+  private readonly scenarioSelect = h('select', {
+    className: 'bds-input bds-scenario-select',
+    'aria-label': 'Scenario',
+  })
+  private readonly scenarioDescription = h('p', { className: 'bds-hint' })
+  private readonly formContainer = h('div', { className: 'bds-dialog-form' })
+  private readonly noFieldsHint = h('p', { className: 'bds-hint' }, 'The process reads no start variables.')
+  private readonly error = h('p', { className: 'bds-error', role: 'alert' })
+  private readonly cancelButton = h('button', { className: 'bds-button', type: 'button' }, 'Cancel')
+  private readonly startButton = h(
+    'button',
+    { className: 'bds-button bds-button--primary', type: 'submit' },
+    'Start instance',
   )
-  scenarioSelect.value = options.selectedScenarioId ?? NO_SCENARIO
-  const scenarioDescription = h('p', { className: 'bds-hint' })
-  const formContainer = h('div', { className: 'bds-dialog-form' })
-  const noFieldsHint = h('p', { className: 'bds-hint' }, 'The process reads no start variables.')
-  const error = h('p', { className: 'bds-error', role: 'alert' })
-  error.hidden = true
-  const cancelButton = h('button', { className: 'bds-button', type: 'button' }, 'Cancel')
-  const startButton = h('button', { className: 'bds-button bds-button--primary', type: 'submit' }, 'Start instance')
-  const titleId = `bds-start-title-${Math.random().toString(36).slice(2)}`
+  private readonly form: HTMLFormElement
+  private readonly backdrop: HTMLElement
+  private baseVariables: Variables
+  private fields: StartField[] = []
+  private rendered: RenderedStartForm
 
-  const form = h(
-    'form',
-    { className: 'bds-dialog', role: 'dialog', 'aria-modal': 'true', 'aria-labelledby': titleId },
-    h(
-      'header',
-      { className: 'bds-dialog-header' },
-      h('h2', { className: 'bds-panel-title', id: titleId }, `Start “${options.processName}”`),
-      h('span', { className: 'bds-engine' }, options.engineLabel),
-    ),
-    h(
-      'div',
-      { className: 'bds-dialog-content' },
-      scenarios.length
-        ? h(
-            'section',
-            { className: 'bds-section' },
-            h('label', { className: 'bds-label' }, 'Scenario', scenarioSelect),
-            scenarioDescription,
-          )
-        : null,
+  constructor(private readonly options: StartDialogOptions) {
+    this.baseVariables = options.startVariables
+    this.scenarioSelect.append(
+      h('option', { value: NO_SCENARIO }, 'No scenario'),
+      ...options.scenarios.map(scenario => h('option', { value: scenario.id }, scenario.name)),
+    )
+    this.scenarioSelect.value = options.selectedScenarioId ?? NO_SCENARIO
+    this.error.hidden = true
+    this.form = this.createForm()
+    this.backdrop = h('div', { className: 'bds-dialog-backdrop' }, this.form)
+    this.rendered = this.renderForm()
+    this.listen()
+  }
+
+  open(container: ParentNode): void {
+    this.showScenarioDescription()
+    container.append(this.backdrop)
+    if (this.fields.length) this.rendered.focus()
+    else this.startButton.focus()
+  }
+
+  close(): void {
+    this.rendered.destroy()
+    this.backdrop.remove()
+  }
+
+  private createForm(): HTMLFormElement {
+    const titleId = `bds-start-title-${Math.random().toString(36).slice(2)}`
+    return h(
+      'form',
+      { className: 'bds-dialog', role: 'dialog', 'aria-modal': 'true', 'aria-labelledby': titleId },
       h(
-        'section',
-        { className: 'bds-section' },
-        h('h3', { className: 'bds-section-title' }, 'Start variables'),
-        formContainer,
-        noFieldsHint,
+        'header',
+        { className: 'bds-dialog-header' },
+        h('h2', { className: 'bds-panel-title', id: titleId }, `Start “${this.options.processName}”`),
+        h('span', { className: 'bds-engine' }, this.options.engineLabel),
       ),
-      error,
-    ),
-    h('footer', { className: 'bds-actions' }, cancelButton, startButton),
-  )
-  const backdrop = h('div', { className: 'bds-dialog-backdrop' }, form)
-  const selectedScenarioId = (): string | null => scenarioSelect.value || null
-  let fields: StartField[] = []
-  const renderForm = (): RenderedStartForm => {
-    fields = options.fieldsFor(selectedScenarioId())
-    noFieldsHint.hidden = fields.length > 0
-    return renderer.render(formContainer, fields, baseVariables)
+      h(
+        'div',
+        { className: 'bds-dialog-content' },
+        this.options.scenarios.length
+          ? h(
+              'section',
+              { className: 'bds-section' },
+              h('label', { className: 'bds-label' }, 'Scenario', this.scenarioSelect),
+              this.scenarioDescription,
+            )
+          : null,
+        h(
+          'section',
+          { className: 'bds-section' },
+          h('h3', { className: 'bds-section-title' }, 'Start variables'),
+          this.formContainer,
+          this.noFieldsHint,
+        ),
+        this.error,
+      ),
+      h('footer', { className: 'bds-actions' }, this.cancelButton, this.startButton),
+    )
   }
-  let rendered = renderForm()
 
-  const close = (): void => {
-    rendered.destroy()
-    backdrop.remove()
+  private listen(): void {
+    this.scenarioSelect.addEventListener('change', () => this.switchScenario())
+    this.cancelButton.addEventListener('click', () => this.close())
+    this.backdrop.addEventListener('mousedown', event => {
+      if (event.target === this.backdrop) this.close()
+    })
+    this.backdrop.addEventListener('keydown', event => {
+      event.stopPropagation()
+      if (event.key === 'Escape') this.close()
+    })
+    this.form.addEventListener('submit', event => {
+      event.preventDefault()
+      this.submit()
+    })
   }
 
-  const showScenarioDescription = (): void => {
-    const description = scenarios.find(scenario => scenario.id === scenarioSelect.value)?.description ?? ''
-    scenarioDescription.textContent = description
-    scenarioDescription.hidden = !description
+  private selectedScenarioId(): string | null {
+    return this.scenarioSelect.value || null
   }
 
-  scenarioSelect.addEventListener('change', () => {
-    baseVariables = scenarios.find(scenario => scenario.id === scenarioSelect.value)?.variables ?? {}
-    rendered.destroy()
-    rendered = renderForm()
-    showScenarioDescription()
-  })
-  cancelButton.addEventListener('click', close)
-  backdrop.addEventListener('mousedown', event => {
-    if (event.target === backdrop) close()
-  })
-  backdrop.addEventListener('keydown', event => {
-    event.stopPropagation()
-    if (event.key === 'Escape') close()
-  })
-  form.addEventListener('submit', event => {
-    event.preventDefault()
-    const values = rendered.readValues()
+  private selectedScenario(): Scenario | undefined {
+    return this.options.scenarios.find(scenario => scenario.id === this.scenarioSelect.value)
+  }
+
+  private renderForm(): RenderedStartForm {
+    this.fields = this.options.fieldsFor(this.selectedScenarioId())
+    this.noFieldsHint.hidden = this.fields.length > 0
+    return this.options.renderer.render(this.formContainer, this.fields, this.baseVariables)
+  }
+
+  private switchScenario(): void {
+    this.baseVariables = this.selectedScenario()?.variables ?? {}
+    this.rendered.destroy()
+    this.rendered = this.renderForm()
+    this.showScenarioDescription()
+  }
+
+  private showScenarioDescription(): void {
+    const description = this.selectedScenario()?.description ?? ''
+    this.scenarioDescription.textContent = description
+    this.scenarioDescription.hidden = !description
+  }
+
+  private submit(): void {
+    const values = this.rendered.readValues()
     if (!values.ok) {
-      error.textContent = values.reason
-      error.hidden = false
+      this.error.textContent = values.reason
+      this.error.hidden = false
       return
     }
-    close()
-    options.onStart(selectedScenarioId(), applyFieldValues(baseVariables, values.values))
-  })
-
-  showScenarioDescription()
-  container.append(backdrop)
-  if (fields.length) rendered.focus()
-  else startButton.focus()
-  return close
+    this.close()
+    this.options.onStart(this.selectedScenarioId(), this.codec.apply(this.baseVariables, values.values))
+  }
 }

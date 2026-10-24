@@ -40,10 +40,12 @@ npm run test:e2e   # from the repo root
 example/
 ├─ index.html          # canvas, burger menu with the example picker, properties panel
 ├─ src/
-│  ├─ main.ts          # menu, file import, share link, start-up
-│  ├─ editor.ts        # creates the modeler per engine and loads models + scenarios
-│  ├─ persistence.ts   # keeps the URL hash in sync with the model
-│  ├─ share.ts         # encodes model + scenarios into the URL hash
+│  ├─ main.ts          # entry point, starts the ExampleApp
+│  ├─ ExampleApp.ts    # menu, file import, share link, start-up
+│  ├─ Editor.ts        # creates the modeler per engine and loads models + scenarios
+│  ├─ HashAutosave.ts  # keeps the URL hash in sync with the model
+│  ├─ ShareLink.ts     # encodes model + scenarios into the URL hash
+│  ├─ utils/           # pure helpers (engine detection, base64url, byte streams)
 │  └─ style.css        # demo-app chrome (not part of the library)
 ├─ public/examples/    # sample .bpmn models with their scenarios
 └─ e2e/                # Playwright specs

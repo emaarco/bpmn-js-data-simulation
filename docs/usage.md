@@ -54,7 +54,7 @@ new BpmnModeler({
 })
 ```
 
-`parseFieldValue` and `formatFieldValue` are exported to convert between field input and variable values. The dialog renders in a shadow root, so page styles do not reach the container a renderer gets; a renderer brings its own styles, e.g. by adding a `<style>` to `container.getRootNode()`.
+`StartFieldCodec` is exported to convert between field input and variable values (`parse`, `format`). The dialog renders in a shadow root, so page styles do not reach the container a renderer gets; a renderer brings its own styles, e.g. by adding a `<style>` to `container.getRootNode()`.
 
 ## Decision cards
 
@@ -82,4 +82,4 @@ dataSimulation.setEnabled(false) // back to the plain token simulation
 dataSimulation.subscribe(snapshot => console.log(snapshot.instances, snapshot.log))
 ```
 
-The engine-neutral core is exported too (`routeGateway`, `parseScenarios`, `zeebeEngine`, `camunda7Engine`, `DataSimulationStore`), for tests or headless use.
+The engine-neutral core is exported too (`GatewayRouter`, `ScenarioParser`, `ZeebeEngine`, `Camunda7Engine` and their ready-made instances `zeebeEngine` and `camunda7Engine`, `EngineRegistry`, `DataSimulationStore`), for tests or headless use.
