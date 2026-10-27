@@ -10,11 +10,13 @@ describe('Camunda7Engine', () => {
     const elements = await loadFlowElements('order-camunda7.bpmn', 'camunda7')
     const task = elements.get('Task_CheckCredit')!
 
-    expect(camunda7Engine.readInputMappings(task)).toEqual([{ source: '${customer.id}', target: 'customerId' }])
-    expect(camunda7Engine.readOutputMappings(task)).toEqual([
-      { source: '${score}', target: 'creditScore' },
-      { source: '${score ge 600}', target: 'creditworthy' },
-    ])
+    expect(camunda7Engine.readIoMappings(task)).toEqual({
+      inputs: [{ source: '${customer.id}', target: 'customerId' }],
+      outputs: [
+        { source: '${score}', target: 'creditScore' },
+        { source: '${score ge 600}', target: 'creditworthy' },
+      ],
+    })
   })
 
   it('reads JUEL conditions and ignores script conditions', async () => {

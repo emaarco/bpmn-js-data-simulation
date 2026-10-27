@@ -15,8 +15,7 @@ export interface EngineAdapter {
   expressionLanguage: string
   taskResultPropagation: TaskResultPropagation
   writeVariable(variables: Variables, target: string, value: unknown): Variables
-  readInputMappings(element: ModdleElement): Mapping[]
-  readOutputMappings(element: ModdleElement): Mapping[]
+  readIoMappings(element: ModdleElement): { inputs: Mapping[]; outputs: Mapping[] }
   readCondition(sequenceFlow: ModdleElement): string | undefined
   canEvaluate(expression: string): boolean
   evaluate(expression: string, variables: Variables): Evaluation

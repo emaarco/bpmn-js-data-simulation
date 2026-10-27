@@ -13,12 +13,11 @@ export class Camunda7Engine implements EngineAdapter {
     return { ...variables, [target]: value }
   }
 
-  readInputMappings(element: ModdleElement): Mapping[] {
-    return this.readMappings(element, 'inputParameters')
-  }
-
-  readOutputMappings(element: ModdleElement): Mapping[] {
-    return this.readMappings(element, 'outputParameters')
+  readIoMappings(element: ModdleElement): { inputs: Mapping[]; outputs: Mapping[] } {
+    return {
+      inputs: this.readMappings(element, 'inputParameters'),
+      outputs: this.readMappings(element, 'outputParameters'),
+    }
   }
 
   readCondition(sequenceFlow: ModdleElement): string | undefined {

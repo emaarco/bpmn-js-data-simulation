@@ -9,12 +9,14 @@ describe('ZeebeEngine', () => {
     const elements = await loadFlowElements('order-zeebe.bpmn', 'zeebe')
     const task = elements.get('Task_CheckCredit')!
 
-    expect(zeebeEngine.readInputMappings(task)).toEqual([{ source: '=customer.id', target: 'customerId' }])
-    expect(zeebeEngine.readOutputMappings(task)).toEqual([
-      { source: '=score', target: 'creditScore' },
-      { source: '=score >= 600', target: 'creditworthy' },
-    ])
-    expect(zeebeEngine.readOutputMappings(elements.get('Task_Ship')!)).toEqual([])
+    expect(zeebeEngine.readIoMappings(task)).toEqual({
+      inputs: [{ source: '=customer.id', target: 'customerId' }],
+      outputs: [
+        { source: '=score', target: 'creditScore' },
+        { source: '=score >= 600', target: 'creditworthy' },
+      ],
+    })
+    expect(zeebeEngine.readIoMappings(elements.get('Task_Ship')!).outputs).toEqual([])
   })
 
   it('reads sequence flow conditions', async () => {
