@@ -12,8 +12,7 @@ export class IoMappings {
   ) {}
 
   apply(element: DiagramElement, instanceId: string): void {
-    const inputs = this.engine.readInputMappings(element.businessObject)
-    const outputs = this.engine.readOutputMappings(element.businessObject)
+    const { inputs, outputs } = this.engine.readIoMappings(element.businessObject)
     const taskResult = this.store.getTaskResult(instanceId, element.id)
     if (!inputs.length && !outputs.length && !taskResult) return
 
