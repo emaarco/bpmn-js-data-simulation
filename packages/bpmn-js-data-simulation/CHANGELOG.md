@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.3.0](https://github.com/emaarco/bpmn-js-data-simulation/compare/v0.2.0...v0.3.0) (2026-10-27)
+
+
+### ⚠ BREAKING CHANGES
+
+* EngineAdapter.readInputMappings and readOutputMappings are replaced by readIoMappings(element), which returns { inputs, outputs }.
+
+### Code Refactoring
+
+* merge engine io-mapping readers into readIoMappings ([#12](https://github.com/emaarco/bpmn-js-data-simulation/issues/12)) ([d002df3](https://github.com/emaarco/bpmn-js-data-simulation/commit/d002df3b4f24ef518d2eeb59e84091dd177b95b5))
+
 ## [0.2.0](https://github.com/emaarco/bpmn-js-data-simulation/compare/v0.1.0...v0.2.0) (2026-10-24)
 
 
