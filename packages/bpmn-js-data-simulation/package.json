@@ -48,7 +48,7 @@
   },
   "peerDependencies": {
     "bpmn-js": ">=18",
-    "bpmn-js-token-simulation": "1.0.0",
+    "bpmn-js-token-simulation": "^1.0.0",
     "diagram-js": ">=15.27"
   },
   "peerDependenciesMeta": {

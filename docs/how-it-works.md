@@ -7,7 +7,7 @@
 - It wraps the context pads: ▶ on a process start event opens the start dialog, and gateways that route by data lose their click-to-choose pad.
 - Its flow badges (overlay type `bds-flow-outcome`) stay visible in simulation mode, where the token simulation hides foreign overlays, and keep a minimum size when zoomed out. Decision cards are not overlays but a layer on top of the canvas, placed next to the gateway on screen. Gateways get the canvas markers `bds-gateway--decided` and `bds-gateway--stuck`, which color the shape itself, so they never cover other elements.
 
-These are internal APIs without a stability guarantee. So the token simulation is pinned to `1.0.0` (Dependabot leaves it alone), an integration test runs the real simulator against the add-on, and a test checks that the internals it builds on still exist.
+These are internal APIs without a stability guarantee. So the add-on accepts any token simulation `1.x` as peer but develops and tests against one exact version. Dependabot proposes every new release, an integration test runs the real simulator against the add-on, and a test checks that the internals it builds on still exist.
 
 The add-on imports nothing from bpmn-js or the token simulation; it reaches them only through the injector. Its build therefore loads in plain Node (ESM and CommonJS) and in Vitest without extra config, e.g. in the unit tests of an app that uses it. A consumer test installs the packed build into a fresh project to keep it that way. Register it next to the token simulation module; the order does not matter.
 
