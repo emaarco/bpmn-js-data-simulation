@@ -11,8 +11,6 @@ updates:
     commit-message:
       prefix: chore
       include: scope
-    ignore:
-      - dependency-name: bpmn-js-token-simulation
     cooldown:
       default-days: 5
       semver-major-days: 14

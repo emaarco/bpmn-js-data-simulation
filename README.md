@@ -35,7 +35,7 @@ bpmn-js-data-simulation evaluates what the process is modeled with:
 npm install @emaarco/bpmn-js-data-simulation
 ```
 
-`bpmn-js` (>= 18) and `bpmn-js-token-simulation` (`1.0.0`, pinned) are peer dependencies.
+`bpmn-js` (>= 18) and `bpmn-js-token-simulation` (`^1.0.0`) are peer dependencies.
 
 ## Quick start
 
