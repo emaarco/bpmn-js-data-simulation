@@ -12,11 +12,11 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@bpmn-io/properties-panel": "3.58.0",
+    "@bpmn-io/properties-panel": "3.58.1",
     "@emaarco/bpmn-js-data-simulation": "*",
     "bpmn-js": "18.31.1",
     "bpmn-js-properties-panel": "5.65.3",
-    "bpmn-js-token-simulation": "1.0.0",
+    "bpmn-js-token-simulation": "1.1.0",
     "camunda-bpmn-js-behaviors": "1.18.0",
     "camunda-bpmn-moddle": "8.0.2",
     "zeebe-bpmn-moddle": "2.0.0"
