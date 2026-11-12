@@ -11,21 +11,19 @@
     "test:e2e": "playwright test",
     "typecheck": "tsc --noEmit"
   },
-  "dependencies": {
+  "devDependencies": {
     "@bpmn-io/properties-panel": "3.58.1",
     "@emaarco/bpmn-js-data-simulation": "*",
+    "@fontsource-variable/geist": "5.3.0",
+    "@fontsource-variable/geist-mono": "5.3.0",
+    "@playwright/test": "1.64.1",
     "bpmn-js": "18.31.1",
     "bpmn-js-properties-panel": "5.65.3",
     "bpmn-js-token-simulation": "1.1.0",
     "camunda-bpmn-js-behaviors": "1.18.0",
     "camunda-bpmn-moddle": "8.0.2",
-    "zeebe-bpmn-moddle": "2.0.0"
-  },
-  "devDependencies": {
-    "@fontsource-variable/geist": "5.3.0",
-    "@fontsource-variable/geist-mono": "5.3.0",
-    "@playwright/test": "1.64.1",
     "typescript": "6.0.3",
-    "vite": "8.3.5"
+    "vite": "8.3.5",
+    "zeebe-bpmn-moddle": "2.0.0"
   }
 }
