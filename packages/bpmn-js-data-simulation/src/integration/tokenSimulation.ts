@@ -13,6 +13,8 @@ export interface DiagramElement {
   businessObject: ModdleElement
   outgoing?: DiagramElement[]
   waypoints?: Array<{ x: number; y: number }>
+  x?: number
+  y?: number
   width?: number
   height?: number
   parent?: DiagramElement
@@ -52,9 +54,22 @@ interface Subscription {
 export interface Simulator {
   createScope(context: { element: DiagramElement; parent: Scope | null; initiator?: Scope }): Scope
   subscribe(scope: Scope, event: SimulatorEvent, triggerFn: (initiator?: Scope) => unknown): Subscription
-  enter(context: { element: DiagramElement; scope: Scope | null; initiator?: Scope }): Scope
+  enter(context: { element: DiagramElement; scope: Scope | null; initiator?: Scope; loopIndex?: number }): Scope
   exit(context: BehaviorContext): void
   getConfig(element: DiagramElement): { activeOutgoing?: DiagramElement | DiagramElement[] }
+}
+
+export interface ActivityBehavior {
+  enter(context: BehaviorContext): void
+  exit(context: BehaviorContext): void
+}
+
+export interface ScopeBehavior {
+  tryExit(scope: Scope, initiator: Scope): void
+}
+
+export interface Animation {
+  animate(connection: { waypoints: Array<{ x: number; y: number }> }, scope: Scope, done: () => void): void
 }
 
 export interface EventBus {

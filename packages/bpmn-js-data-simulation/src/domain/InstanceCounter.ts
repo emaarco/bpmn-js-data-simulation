@@ -1,6 +1,6 @@
 import type { Evaluation, InstanceCount, MultiInstanceLoop } from './model.js'
 
-export const DEFAULT_INSTANCE_COUNT = 3
+const DEFAULT_INSTANCE_COUNT = 3
 
 export type EvaluateExpression = (expression: string) => Evaluation
 

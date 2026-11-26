@@ -9,6 +9,10 @@ export function findProcessInstance(scope: Scope): Scope {
   return current
 }
 
+export function isLoopInstance(scope: Scope): boolean {
+  return scope.parent?.element === scope.element
+}
+
 export function elementName(element: DiagramElement): string {
   const name = element.businessObject.name
   return typeof name === 'string' && name.trim() ? name.trim() : element.id

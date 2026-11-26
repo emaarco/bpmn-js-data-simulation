@@ -116,11 +116,9 @@ export interface MultiInstanceLoop {
   collection?: string
 }
 
-export type InstanceCountSource = 'cardinality' | 'collection' | 'default'
-
 export interface InstanceCount {
   count: number
-  source: InstanceCountSource
+  source: 'cardinality' | 'collection' | 'default'
   expression?: string
   reason?: string
 }

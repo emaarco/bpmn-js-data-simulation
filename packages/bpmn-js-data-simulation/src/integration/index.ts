@@ -3,12 +3,14 @@ import { DataActivityBehavior } from './behaviors/DataActivityBehavior.js'
 import { DataContextPads } from './behaviors/DataContextPads.js'
 import { DataGatewayBehaviors } from './behaviors/DataGatewayBehaviors.js'
 import { DataGatewaySettings } from './behaviors/DataGatewaySettings.js'
+import { MultiInstanceBehaviors } from './behaviors/MultiInstanceBehaviors.js'
 import { DataGateways } from './DataGateways.js'
 import { DataSimulation } from './DataSimulation.js'
 import { DataSimulationOverlays } from './DataSimulationOverlays.js'
 import { DataSimulationPanel } from './DataSimulationPanel.js'
 import { DataSimulationToggle } from './DataSimulationToggle.js'
 import { DataStartForm } from './DataStartForm.js'
+import { MultiInstanceActivities } from './MultiInstanceActivities.js'
 import { PathSimulation } from './PathSimulation.js'
 
 export interface DataSimulationModuleDeclaration {
@@ -30,6 +32,7 @@ export const DataSimulationModule: DataSimulationModuleDeclaration = {
     'dataSimulationToggle',
     'dataGatewayBehaviors',
     'dataActivityBehavior',
+    'multiInstanceBehaviors',
     'dataGatewaySettings',
     'dataContextPads',
   ],
@@ -44,4 +47,6 @@ export const DataSimulationModule: DataSimulationModuleDeclaration = {
   dataActivityBehavior: ['type', DataActivityBehavior],
   dataGatewaySettings: ['type', DataGatewaySettings],
   dataContextPads: ['type', DataContextPads],
+  multiInstanceActivities: ['type', MultiInstanceActivities],
+  multiInstanceBehaviors: ['type', MultiInstanceBehaviors],
 }
