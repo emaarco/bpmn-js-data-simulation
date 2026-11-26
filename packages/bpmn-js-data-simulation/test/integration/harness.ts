@@ -2,9 +2,10 @@ import SimulatorModule from 'bpmn-js-token-simulation/lib/simulator'
 import { Injector } from 'didi'
 import EventBus from 'diagram-js/lib/core/EventBus'
 import { vi } from 'vitest'
-import DataSimulationModule from '../../src'
+import DataSimulationModule, { PathSimulationModule } from '../../src'
 import type { EngineId, ModdleElement } from '../../src/engines/types'
 import type { DataSimulation } from '../../src/integration/DataSimulation'
+import type { PathSimulation } from '../../src/integration/PathSimulation'
 import { parseDefinitions, readFixture } from '../engines/moddle'
 
 interface TestElement {
@@ -27,14 +28,26 @@ export interface Harness {
   trigger(elementId: string): void
 }
 
-export async function createHarness(xml: string, engine: EngineId, scenarios?: unknown): Promise<Harness> {
+export interface PathSimulationHarness {
+  pathSimulation: PathSimulation
+  markers(id: string): string[]
+}
+
+interface Diagram {
+  elements: Map<string, TestElement>
+  elementRegistry: object
+  canvas: object
+  markers(id: string): string[]
+  container: HTMLElement
+}
+
+async function buildDiagram(xml: string, engine: EngineId): Promise<Diagram> {
   const elements = buildElements(await parseDefinitions(xml, engine))
   const elementRegistry = {
     get: (id: string) => elements.get(id),
     forEach: (callback: (element: TestElement) => void) => elements.forEach(element => callback(element)),
     filter: (callback: (element: TestElement) => boolean) => [...elements.values()].filter(callback),
   }
-  const overlays = { add: vi.fn(() => 'overlay'), remove: vi.fn() }
   const markers = new Map<string, Set<string>>()
   const container = document.createElement('div')
   const canvas = {
@@ -44,6 +57,26 @@ export async function createHarness(xml: string, engine: EngineId, scenarios?: u
       markers.set(element.id, new Set([...(markers.get(element.id) ?? []), marker])),
     removeMarker: (element: TestElement, marker: string) => markers.get(element.id)?.delete(marker),
   }
+  return { elements, elementRegistry, canvas, container, markers: id => [...(markers.get(id) ?? [])] }
+}
+
+export async function createPathSimulationHarness(xml: string, engine: EngineId): Promise<PathSimulationHarness> {
+  const { elementRegistry, canvas, markers } = await buildDiagram(xml, engine)
+  const injector = new Injector([
+    {
+      elementRegistry: ['value', elementRegistry],
+      canvas: ['value', canvas],
+      'config.dataSimulation': ['value', { engine }],
+    },
+    PathSimulationModule,
+  ] as any)
+  injector.init()
+  return { pathSimulation: injector.get('pathSimulation'), markers }
+}
+
+export async function createHarness(xml: string, engine: EngineId, scenarios?: unknown): Promise<Harness> {
+  const { elements, elementRegistry, canvas, container, markers } = await buildDiagram(xml, engine)
+  const overlays = { add: vi.fn(() => 'overlay'), remove: vi.fn() }
   const injector = new Injector([
     {
       eventBus: ['type', EventBus],
@@ -73,7 +106,7 @@ export async function createHarness(xml: string, engine: EngineId, scenarios?: u
     eventBus,
     injector,
     container,
-    markers: id => [...(markers.get(id) ?? [])],
+    markers,
     get: id => elements.get(id)!,
     trigger(elementId) {
       const subscription = simulator.findSubscription({ element: elements.get(elementId) })

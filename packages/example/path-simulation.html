@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" type="image/png" href="/favicon.png" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <title>BPMN Path Simulation</title>
+  </head>
+  <body>
+    <label class="path-control">
+      <span>orderTotal</span>
+      <input id="order-total" name="orderTotal" type="range" min="0" max="10000" step="100" value="1200" />
+      <output id="order-total-value" for="order-total">1200</output>
+    </label>
+    <div id="canvas" class="path-canvas" data-testid="path-canvas"></div>
+    <script type="module" src="/src/PathSimulationViewer.ts"></script>
+  </body>
+</html>

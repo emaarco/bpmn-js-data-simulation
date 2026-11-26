@@ -1,4 +1,4 @@
-import { type PathResolution, type StartField, StartFieldCodec, type Variables } from '@emaarco/bpmn-js-data-simulation'
+import { type SimulatedPath, type StartField, StartFieldCodec, type Variables } from '@emaarco/bpmn-js-data-simulation'
 import type { Editor } from './Editor'
 import { type ElementRegistry, type WhatIfField, WhatIfFields } from './WhatIfFields'
 
@@ -50,7 +50,7 @@ export class WhatIfPanel {
       this.editor.leaveSimulation()
       this.prefill()
     } else {
-      this.editor.dataSimulation.clearResolution()
+      this.editor.pathSimulation.clear()
     }
     this.editor.fit()
   }
@@ -96,11 +96,11 @@ export class WhatIfPanel {
         .derive(this.values)
         .map(field => this.renderField(field)),
     )
-    this.resolve()
+    this.simulate()
   }
 
-  private resolve(): void {
-    this.showDecisions(this.editor.dataSimulation.resolve(this.values))
+  private simulate(): void {
+    this.showDecisions(this.editor.pathSimulation.simulate(this.values))
   }
 
   private renderField(field: WhatIfField): HTMLElement {
@@ -156,10 +156,10 @@ export class WhatIfPanel {
 
   private update(name: string, value: unknown): void {
     this.values = this.codec.apply(this.values, { [name]: value })
-    this.resolve()
+    this.simulate()
   }
 
-  private showDecisions({ decisions }: PathResolution): void {
+  private showDecisions({ decisions }: SimulatedPath): void {
     const registry = this.elementRegistry()
     const label = (id: string) => {
       const name = registry.get(id)?.businessObject.name
@@ -183,7 +183,7 @@ export class WhatIfPanel {
   }
 
   private fields(): WhatIfFields {
-    return new WhatIfFields(this.elementRegistry(), this.editor.dataSimulation.getEngine())
+    return new WhatIfFields(this.elementRegistry(), this.editor.pathSimulation.getEngine())
   }
 
   private elementRegistry(): ElementRegistry {

@@ -52,6 +52,9 @@
     "diagram-js": ">=15.27"
   },
   "peerDependenciesMeta": {
+    "bpmn-js-token-simulation": {
+      "optional": true
+    },
     "diagram-js": {
       "optional": true
     }

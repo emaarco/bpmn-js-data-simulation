@@ -8,13 +8,20 @@ import { DataSimulationOverlays } from './DataSimulationOverlays.js'
 import { DataSimulationPanel } from './DataSimulationPanel.js'
 import { DataSimulationToggle } from './DataSimulationToggle.js'
 import { DataStartForm } from './DataStartForm.js'
+import { PathSimulation } from './PathSimulation.js'
 
 export interface DataSimulationModuleDeclaration {
   __init__: string[]
   [service: string]: unknown
 }
 
-const DataSimulationModule: DataSimulationModuleDeclaration = {
+export const PathSimulationModule: DataSimulationModuleDeclaration = {
+  __init__: [],
+  pathSimulation: ['type', PathSimulation],
+}
+
+export const DataSimulationModule: DataSimulationModuleDeclaration = {
+  __depends__: [PathSimulationModule],
   __init__: [
     'dataSimulation',
     'dataSimulationOverlays',
@@ -35,5 +42,3 @@ const DataSimulationModule: DataSimulationModuleDeclaration = {
   dataGatewaySettings: ['type', DataGatewaySettings],
   dataContextPads: ['type', DataContextPads],
 }
-
-export default DataSimulationModule

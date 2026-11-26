@@ -2,7 +2,7 @@
   "$schema": "https://unpkg.com/knip@6/schema.json",
   "workspaces": {
     "packages/bpmn-js-data-simulation": {
-      "ignore": ["test/consumer/fixture/**"],
+      "ignore": ["test/consumer/fixture/**", "test/consumer/fixture-path-only/**"],
       "ignoreDependencies": ["bpmn-js"]
     }
   }

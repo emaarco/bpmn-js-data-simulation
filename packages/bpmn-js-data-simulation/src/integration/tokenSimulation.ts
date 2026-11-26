@@ -81,3 +81,7 @@ export interface ElementRegistry {
   get(id: string): DiagramElement | undefined
   filter(predicate: (element: DiagramElement) => boolean): DiagramElement[]
 }
+
+export interface Injector {
+  get(name: string, strict: false): unknown
+}

@@ -5,7 +5,11 @@ import '@bpmn-io/properties-panel/dist/assets/properties-panel.css'
 import 'bpmn-js-token-simulation/assets/css/bpmn-js-token-simulation.css'
 import '@emaarco/bpmn-js-data-simulation/assets/bpmn-js-data-simulation.css'
 
-import DataSimulationModule, { type DataSimulation, type EngineId } from '@emaarco/bpmn-js-data-simulation'
+import DataSimulationModule, {
+  type DataSimulation,
+  type EngineId,
+  type PathSimulation,
+} from '@emaarco/bpmn-js-data-simulation'
 import BpmnModeler from 'bpmn-js/lib/Modeler'
 import {
   BpmnPropertiesPanelModule,
@@ -89,6 +93,10 @@ export class Editor {
 
   get dataSimulation(): DataSimulation {
     return this.modeler.get<DataSimulation>('dataSimulation')
+  }
+
+  get pathSimulation(): PathSimulation {
+    return this.modeler.get<PathSimulation>('pathSimulation')
   }
 
   async open({ xml, engine, scenarios = [] }: Model, { simulate = false } = {}): Promise<void> {
