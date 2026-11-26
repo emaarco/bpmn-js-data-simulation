@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.6.0](https://github.com/emaarco/bpmn-js-data-simulation/compare/v0.5.0...v0.6.0) (2026-11-26)
+
+
+### Features
+
+* keep slider ranges stable on re-derive and let hosts override them ([#40](https://github.com/emaarco/bpmn-js-data-simulation/issues/40)) ([b007866](https://github.com/emaarco/bpmn-js-data-simulation/commit/b0078663fd8bd4dadc8459cd99565115c142ee10))
+* route conditional sequence flows that leave an activity ([#37](https://github.com/emaarco/bpmn-js-data-simulation/issues/37)) ([55eca32](https://github.com/emaarco/bpmn-js-data-simulation/commit/55eca32685ae8899b6cac43a186dd0c2a161f5e1))
+* run multi-instance activities with the instance count from the scenario ([#38](https://github.com/emaarco/bpmn-js-data-simulation/issues/38)) ([41fbc51](https://github.com/emaarco/bpmn-js-data-simulation/commit/41fbc5133ddfc35d5d865bd036b58c5d99a4c8c9))
+
+
+### Bug Fixes
+
+* **deps:** bump the npm-minor-patch group with 11 updates ([#41](https://github.com/emaarco/bpmn-js-data-simulation/issues/41)) ([16f529c](https://github.com/emaarco/bpmn-js-data-simulation/commit/16f529caf4a1a2f30368026ffcf490dc808498fa))
+
 ## [0.5.0](https://github.com/emaarco/bpmn-js-data-simulation/compare/v0.4.0...v0.5.0) (2026-11-26)
 
 
