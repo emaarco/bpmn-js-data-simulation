@@ -132,6 +132,21 @@ describe.each(fixtures)('multi-instance activities with %s', (engine, fixture) =
     expect(progressOn(harness, 'subProcess_deliverToSite')).toBe('2/2')
   })
 
+  it('hides the token count of the token simulation on multi-instance activities, the tag shows it', async () => {
+    const harness = await harnessFor(fixture, engine, fleetScenarios)
+    harness.overlays.remove.mockClear()
+    harness.eventBus.fire('tokenSimulation.simulator.elementChanged', {
+      element: harness.get('serviceTask_assembleBike'),
+    })
+    harness.eventBus.fire('tokenSimulation.simulator.elementChanged', {
+      element: harness.get('serviceTask_sendInvoice'),
+    })
+
+    expect(harness.overlays.remove.mock.calls).toEqual([
+      [{ element: harness.get('serviceTask_assembleBike'), type: 'bts-token-count' }],
+    ])
+  })
+
   it('applies the mappings and task result of the activity once, when the last instance is done', async () => {
     const harness = await harnessFor(fixture, engine, fleetScenarios)
     const store = harness.injector.get<DataSimulationStore>('dataSimulationStore')

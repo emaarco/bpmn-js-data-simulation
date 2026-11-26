@@ -39,7 +39,7 @@ A task or sub-process with the parallel (|||) or sequential (≡) multi-instance
 | Zeebe     | `loopCardinality`, else `zeebe:loopCharacteristics inputCollection`             |
 | Camunda 7 | `loopCardinality`, else `camunda:collection` (an expression or a variable name) |
 
-- **Parallel:** all instances start at once and finish one by one; the token moves on after the last one.
+- **Parallel:** all instances start, each with a short offset, so their tokens pass through the activity one behind the other; the token moves on after the last one.
 - **Sequential:** the next instance starts when the previous one is done.
 - **Empty collection:** no instance runs and the token moves on.
 - **No data:** without a cardinality or collection, or with the data simulation switched off, 3 instances run, so the pattern still shows. If the collection cannot be read (a missing variable, a value that is not a list), 3 instances run too, and **Issues** in the process data panel says why.

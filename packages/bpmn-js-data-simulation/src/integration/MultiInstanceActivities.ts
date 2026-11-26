@@ -10,6 +10,7 @@ import {
   type Animation,
   type BehaviorContext,
   type DiagramElement,
+  ELEMENT_CHANGED_EVENT,
   type EventBus,
   type Injector,
   type Overlays,
@@ -19,6 +20,7 @@ import {
   type ScopeBehavior,
   type Simulator,
   TOGGLE_MODE_EVENT,
+  TOKEN_COUNT_OVERLAY,
 } from './tokenSimulation.js'
 
 export interface LoopInstanceContext extends BehaviorContext {
@@ -26,10 +28,9 @@ export interface LoopInstanceContext extends BehaviorContext {
 }
 
 const PROGRESS_OVERLAY = 'bds-loop-progress'
-const PROGRESS_OFFSET_TOP = -20
-const WORK_INSET_X = 20
-const WORK_INSET_Y = 12
-const MAX_WORK_STEPS = 3
+const PROGRESS_OFFSET_TOP = -26
+const BELOW_TOKEN_COUNT = 250
+const STAGGER_STEP_LENGTH = 6
 
 export class MultiInstanceActivities {
   static $inject = [
@@ -57,6 +58,9 @@ export class MultiInstanceActivities {
     injector: Injector,
   ) {
     this.animation = injector.get('animation', false) as Animation | undefined
+    eventBus.on(ELEMENT_CHANGED_EVENT, BELOW_TOKEN_COUNT, ({ element }: { element: DiagramElement }) => {
+      if (this.loopOf(element)) this.overlays.remove({ element, type: TOKEN_COUNT_OVERLAY })
+    })
     eventBus.on(SCOPE_DESTROYED_EVENT, ({ scope }: { scope: Scope }) => this.loops.delete(scope.id))
     eventBus.on([RESET_SIMULATION_EVENT, TOGGLE_MODE_EVENT], () => {
       this.loops.clear()
@@ -88,12 +92,11 @@ export class MultiInstanceActivities {
     const { element, scope, loopIndex } = context
     const loop = this.loops.get(scope.parent!.id)?.loop
     this.instanceIndexes.set(scope, loopIndex)
-    if (!loop || is(element, 'bpmn:SubProcess')) {
-      enterActivity(context)
-      return
-    }
-    const steps = loop.mode === 'parallel' ? 1 + (loopIndex % MAX_WORK_STEPS) : 1
-    this.work(element, scope, loopIndex, loop.progress.length, steps, () => enterActivity(context))
+    const runInstance = is(element, 'bpmn:SubProcess')
+      ? () => enterActivity(context)
+      : () => this.passThrough(element, scope, () => enterActivity(context))
+    const staggerSteps = loop?.mode === 'parallel' ? loopIndex : 0
+    this.stagger(element, scope, staggerSteps, runInstance)
   }
 
   exitInstance({ element, scope }: BehaviorContext): void {
@@ -144,20 +147,29 @@ export class MultiInstanceActivities {
     this.simulator.enter({ element: activity, scope: body, initiator: body, loopIndex: index })
   }
 
-  private work(activity: DiagramElement, scope: Scope, lane: number, lanes: number, steps: number, done: () => void) {
+  private passThrough(activity: DiagramElement, scope: Scope, done: () => void): void {
+    if (!this.animation) {
+      done()
+      return
+    }
+    const entry = this.entryPoint(activity)
+    const exit = { x: entry.x + (activity.width ?? 0), y: entry.y }
+    this.animation.animate({ waypoints: [entry, exit] }, scope, done)
+  }
+
+  private stagger(activity: DiagramElement, scope: Scope, steps: number, done: () => void): void {
     if (!this.animation || !steps) {
       done()
       return
     }
-    const path = { waypoints: this.workPath(activity, lane, lanes, steps % 2 === 0) }
-    this.animation.animate(path, scope, () => this.work(activity, scope, lane, lanes, steps - 1, done))
+    const entry = this.entryPoint(activity)
+    const pause = { waypoints: [entry, { x: entry.x + STAGGER_STEP_LENGTH, y: entry.y }] }
+    const waiting = this.animation.createAnimation(pause, scope, () => this.stagger(activity, scope, steps - 1, done))
+    if (waiting) waiting.hide()
+    else done()
   }
 
-  private workPath(activity: DiagramElement, lane: number, lanes: number, backwards: boolean) {
-    const { x = 0, y = 0, width = 0, height = 0 } = activity
-    const laneY = y + WORK_INSET_Y + ((height - 2 * WORK_INSET_Y) * (lane + 0.5)) / lanes
-    const start = { x: x + WORK_INSET_X, y: laneY }
-    const end = { x: x + width - WORK_INSET_X, y: laneY }
-    return backwards ? [end, start] : [start, end]
+  private entryPoint({ x = 0, y = 0, height = 0 }: DiagramElement): { x: number; y: number } {
+    return { x, y: y + height / 2 }
   }
 }

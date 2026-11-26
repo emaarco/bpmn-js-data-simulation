@@ -19,6 +19,10 @@ test.beforeEach(async ({ page }) => {
 test('assembles all bikes in parallel, then delivers to one site after the other', async ({ page }) => {
   await startInstance(page, { scenario: 'Four bikes, two sites', startEventId: START_EVENT })
 
+  await expect(progress(page, 'serviceTask_assembleBike')).toBeVisible()
+  await expect(
+    page.locator('.djs-overlays[data-container-id="serviceTask_assembleBike"] .bts-token-count'),
+  ).toHaveCount(0)
   await expect(progress(page, 'serviceTask_assembleBike')).toHaveText('4/4')
   await expect(progress(page, 'serviceTask_assembleBike')).toHaveAttribute(
     'title',

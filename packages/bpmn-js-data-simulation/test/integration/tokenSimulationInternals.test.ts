@@ -27,7 +27,7 @@ describe('token simulation internals this add-on hooks into', () => {
     [SimulatorModule, 'activityBehavior', ['enter', 'exit']],
     [SimulatorModule, 'subProcessBehavior', ['enter', 'exit']],
     [SimulatorModule, 'scopeBehavior', ['tryExit']],
-    [AnimationModule, 'animation', ['animate']],
+    [AnimationModule, 'animation', ['animate', 'createAnimation']],
     [ExclusiveGatewaySettingsModule, 'exclusiveGatewaySettings', ['setSequenceFlow']],
     [InclusiveGatewaySettingsModule, 'inclusiveGatewaySettings', ['_setGatewayDefaults', 'toggleSequenceFlow']],
     [ContextPadsModule, 'contextPads', []],
