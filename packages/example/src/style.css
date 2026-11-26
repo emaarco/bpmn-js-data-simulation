@@ -70,7 +70,8 @@ body {
   border-left: 1px solid var(--line);
 }
 
-.is-simulating .app-properties {
+.is-simulating .app-properties,
+.is-whatif .app-properties {
   display: none;
 }
 
@@ -79,6 +80,8 @@ body {
   top: 12px;
   right: 12px;
   z-index: 10001;
+  display: flex;
+  gap: 8px;
 }
 
 .app-menu-btn {
@@ -101,7 +104,8 @@ body {
 }
 
 .app-menu-btn:hover,
-.app-menu-btn[aria-expanded='true'] {
+.app-menu-btn[aria-expanded='true'],
+.app-menu-btn[aria-pressed='true'] {
   border-color: var(--cd-blau);
   background: rgba(51, 93, 229, 0.06);
 }
@@ -281,4 +285,134 @@ body {
 
 .app-canvas .bts-toggle-mode {
   font-family: inherit;
+}
+
+.app-whatif {
+  flex: 0 0 340px;
+  overflow-y: auto;
+  padding: 20px;
+  background: #fff;
+  border-left: 1px solid var(--line);
+  font-size: 13px;
+}
+
+.app-whatif[hidden] {
+  display: none;
+}
+
+.app-whatif h2 {
+  margin: 0;
+  font-size: 15px;
+}
+
+.app-whatif h3 {
+  margin: 16px 0 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.app-whatif-hint {
+  margin: 4px 0 12px;
+  color: #6b7280;
+}
+
+.app-whatif-scenario,
+.app-whatif-field {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 6px 10px;
+  padding: 8px 0;
+  border-top: 1px solid var(--line);
+}
+
+.app-whatif-scenario {
+  grid-template-columns: auto 1fr;
+  border-top: none;
+  padding-top: 0;
+  color: #6b7280;
+}
+
+.app-whatif-name {
+  font-family: var(--bds-font-mono);
+  font-size: 12px;
+}
+
+.app-whatif select {
+  min-width: 0;
+}
+
+.app-whatif select,
+.app-whatif input[type='text'],
+.app-whatif input[type='number'] {
+  font: inherit;
+  color: var(--cd-schwarz);
+  padding: 5px 8px;
+  border: 1px solid var(--line);
+  border-radius: var(--cd-radius-sm);
+  background: #fff;
+}
+
+.app-whatif input[type='number'] {
+  width: 96px;
+  text-align: right;
+}
+
+.app-whatif-field--text,
+.app-whatif-field--json {
+  grid-template-columns: 1fr;
+}
+
+.app-whatif input[type='range'] {
+  grid-column: 1 / -1;
+  width: 100%;
+  accent-color: var(--cd-blau);
+}
+
+.app-whatif input[type='checkbox'] {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--cd-blau);
+}
+
+.app-whatif input:focus-visible,
+.app-whatif select:focus-visible {
+  outline: none;
+  border-color: var(--cd-blau);
+  box-shadow: 0 0 0 3px rgba(43, 80, 212, 0.12);
+}
+
+.app-whatif input.is-invalid {
+  border-color: #c0392b;
+}
+
+.app-whatif-decisions {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.app-whatif-decisions li {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 4px 0;
+}
+
+.app-whatif-gateway {
+  color: #6b7280;
+}
+
+.app-whatif-outcome {
+  font-weight: 600;
+  color: var(--cd-blau-link);
+  text-align: right;
+}
+
+.app-whatif-decisions li.is-stuck .app-whatif-outcome {
+  color: #c0392b;
+  font-weight: 500;
 }

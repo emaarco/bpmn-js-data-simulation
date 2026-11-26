@@ -137,7 +137,7 @@ export class Editor {
     })
   }
 
-  private leaveSimulation(): void {
+  leaveSimulation(): void {
     if (this.simulating) this.modeler.get<ToggleMode>('toggleMode').toggleMode(false)
   }
 

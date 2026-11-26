@@ -2,6 +2,7 @@ import type { EngineId } from '@emaarco/bpmn-js-data-simulation'
 import { BLANK_BPMN, Editor, type Model } from './Editor'
 import { HashAutosave } from './HashAutosave'
 import { ShareLink } from './ShareLink'
+import { WhatIfPanel } from './WhatIfPanel'
 import { detectEngine } from './utils/detectEngine'
 
 const EXAMPLE_HASH_PREFIX = '#example='
@@ -24,6 +25,11 @@ export class ExampleApp {
   private readonly editor = new Editor(this.find<HTMLElement>('#canvas'), this.find<HTMLElement>('#properties'))
   private readonly shareLink = new ShareLink()
   private readonly autosave = new HashAutosave(this.editor, this.shareLink)
+  private readonly whatIf = new WhatIfPanel(
+    this.find<HTMLElement>('#whatif-panel'),
+    this.find<HTMLButtonElement>('#btn-whatif'),
+    this.editor,
+  )
   private toastTimer?: number
 
   constructor() {
@@ -125,7 +131,8 @@ export class ExampleApp {
   private async applyModel(model: Model, { simulate = false, persist = true } = {}): Promise<void> {
     this.setStatus('loading')
     try {
-      await this.editor.open(model, { simulate })
+      await this.editor.open(model, { simulate: simulate && !this.whatIf.isActive() })
+      this.whatIf.reload()
       this.setStatus('ready')
       if (persist) void this.shareLink.syncHash(model)
     } catch (error) {

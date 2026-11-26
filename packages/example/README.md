@@ -24,6 +24,7 @@ During `dev`, Vite aliases `@emaarco/bpmn-js-data-simulation` straight to the si
   - **`bike-order.camunda7.bpmn`**: the same order process with `camunda:inputOutput` and JUEL.
   - **`return-handling.camunda7.bpmn`**: a gateway with JavaScript conditions that falls back to the click.
 - Starting instances through the start dialog, prefilled from the scenarios.
+- **What-if** next to the menu: a control for every variable the conditions read (prefilled from a scenario) drives `dataSimulation.resolve()`, so the gateways decide and the path is marked on every change, without a token.
 - Opening or dropping your own `.bpmn` (engine detected from its namespace) or a scenario `.json`, and a share link that encodes model and scenarios in the URL.
 
 ## End-to-end tests
