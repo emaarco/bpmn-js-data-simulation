@@ -22,6 +22,7 @@ During `dev`, Vite aliases `@emaarco/bpmn-js-data-simulation` straight to the si
   - **`bike-order.zeebe.bpmn`**: exclusive and inclusive gateways, FEEL conditions, output mappings, a default flow, and a scenario where a missing variable stops the token.
   - **`bike-service.zeebe.bpmn`**: an output mapping that calculates the invoice in FEEL.
   - **`bike-order.camunda7.bpmn`**: the same order process with `camunda:inputOutput` and JUEL.
+  - **`fleet-order.zeebe.bpmn`** and **`fleet-order.camunda7.bpmn`**: a parallel multi-instance task and a sequential multi-instance sub-process over the `bikes` and `sites` collections, with an empty list and a missing one.
   - **`return-handling.camunda7.bpmn`**: a gateway with JavaScript conditions that falls back to the click.
   - **`bike-repair.camunda7-conditional-flows.bpmn`**: conditions on the flows that leave a task next to the same logic with an inclusive gateway, so one scenario shows that both route alike. Models with such an implicit split end in `camunda7-conditional-flows.bpmn` and are linted with their own config, which drops `@miragon/rules/flow-target-alignment`.
 - Starting instances through the start dialog, prefilled from the scenarios.

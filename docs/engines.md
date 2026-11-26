@@ -41,4 +41,4 @@ Not evaluated: method calls (`execution.getVariable(…)`) and script conditions
 
 ## Adding an engine
 
-An engine is one `EngineAdapter` (`src/engines/types.ts`): it reads the mappings and conditions from the moddle elements and evaluates expressions. `activityConditionRefusal` is the reason an engine rejects conditional flows on activities; leave it out when the engine evaluates them. Pass an adapter object (e.g. an instance of your own class) as `engine`, or add it to `src/engines/` (see [CONTRIBUTING.md](../CONTRIBUTING.md)).
+An engine is one `EngineAdapter` (`src/engines/types.ts`): it reads the mappings, conditions and multi-instance loops from the moddle elements and evaluates expressions. `activityConditionRefusal` is the reason an engine rejects conditional flows on activities; leave it out when the engine evaluates them. `readLoop` is optional; without it, a multi-instance activity runs once, as in the plain token simulation. Pass an adapter object (e.g. an instance of your own class) as `engine`, or add it to `src/engines/` (see [CONTRIBUTING.md](../CONTRIBUTING.md)).

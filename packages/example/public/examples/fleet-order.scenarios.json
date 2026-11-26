@@ -1,0 +1,51 @@
+{
+  "scenarios": [
+    {
+      "id": "four-bikes-two-sites",
+      "name": "Four bikes, two sites",
+      "description": "Four bikes are assembled in parallel, then the van delivers to two sites one after the other.",
+      "variables": {
+        "customer": { "id": "C-5120", "name": "Radwerk GmbH" },
+        "bikes": [
+          { "model": "City", "frame": "M" },
+          { "model": "City", "frame": "L" },
+          { "model": "E-Cargo", "frame": "M" },
+          { "model": "Trekking", "frame": "S" }
+        ],
+        "sites": ["Munich HQ", "Augsburg depot"]
+      }
+    },
+    {
+      "id": "one-bike-one-site",
+      "name": "One bike, one site",
+      "description": "A single bike: both multi-instance activities run exactly one instance.",
+      "variables": {
+        "customer": { "id": "C-5121", "name": "Kurierdienst Nord" },
+        "bikes": [{ "model": "E-Cargo", "frame": "L" }],
+        "sites": ["Hamburg hub"]
+      }
+    },
+    {
+      "id": "already-assembled",
+      "name": "Bikes already assembled",
+      "description": "The bike list is empty, so Assemble bike is skipped and the token goes straight to the deliveries.",
+      "variables": {
+        "customer": { "id": "C-5122", "name": "Velo Leasing AG" },
+        "bikes": [],
+        "sites": ["Berlin office", "Potsdam office", "Leipzig office"]
+      }
+    },
+    {
+      "id": "sites-missing",
+      "name": "Sites missing",
+      "description": "sites is not set, so the collection of Deliver to site cannot be read. The simulation falls back to 3 instances and logs why.",
+      "variables": {
+        "customer": { "id": "C-5123", "name": "Startup Garage" },
+        "bikes": [
+          { "model": "City", "frame": "M" },
+          { "model": "City", "frame": "M" }
+        ]
+      }
+    }
+  ]
+}
