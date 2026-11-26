@@ -1,0 +1,132 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:camunda="http://camunda.org/schema/1.0/bpmn" xmlns:modeler="http://camunda.org/schema/modeler/1.0" id="definitions_fleetOrder" targetNamespace="http://bpmn.io/schema/bpmn" modeler:executionPlatform="Camunda Platform" modeler:executionPlatformVersion="7.24.0">
+  <bpmn:process id="Process_FleetOrder" name="Fleet order" isExecutable="true" camunda:historyTimeToLive="180">
+    <bpmn:startEvent id="startEvent_fleetOrderReceived" name="Fleet order received" camunda:asyncBefore="true">
+      <bpmn:outgoing>flow_fleetOrderReceivedToAssembleBike</bpmn:outgoing>
+    </bpmn:startEvent>
+    <bpmn:serviceTask id="serviceTask_assembleBike" name="Assemble bike" camunda:type="external" camunda:topic="assembleBike" camunda:asyncBefore="true">
+      <bpmn:incoming>flow_fleetOrderReceivedToAssembleBike</bpmn:incoming>
+      <bpmn:outgoing>flow_assembleBikeToDeliverToSite</bpmn:outgoing>
+      <bpmn:multiInstanceLoopCharacteristics camunda:collection="${bikes}" camunda:elementVariable="bike" />
+    </bpmn:serviceTask>
+    <bpmn:subProcess id="subProcess_deliverToSite" name="Deliver to site" camunda:asyncBefore="true">
+      <bpmn:incoming>flow_assembleBikeToDeliverToSite</bpmn:incoming>
+      <bpmn:outgoing>flow_deliverToSiteToSendInvoice</bpmn:outgoing>
+      <bpmn:multiInstanceLoopCharacteristics isSequential="true" camunda:collection="sites" camunda:elementVariable="site" />
+      <bpmn:startEvent id="startEvent_deliveryStarted" name="Delivery started">
+        <bpmn:outgoing>flow_deliveryStartedToLoadVan</bpmn:outgoing>
+      </bpmn:startEvent>
+      <bpmn:userTask id="userTask_loadVan" name="Load van" camunda:asyncAfter="true">
+        <bpmn:incoming>flow_deliveryStartedToLoadVan</bpmn:incoming>
+        <bpmn:outgoing>flow_loadVanToHandOverBikes</bpmn:outgoing>
+      </bpmn:userTask>
+      <bpmn:userTask id="userTask_handOverBikes" name="Hand over bikes" camunda:asyncAfter="true">
+        <bpmn:incoming>flow_loadVanToHandOverBikes</bpmn:incoming>
+        <bpmn:outgoing>flow_handOverBikesToSiteDelivered</bpmn:outgoing>
+      </bpmn:userTask>
+      <bpmn:endEvent id="endEvent_siteDelivered" name="Site delivered">
+        <bpmn:incoming>flow_handOverBikesToSiteDelivered</bpmn:incoming>
+      </bpmn:endEvent>
+      <bpmn:sequenceFlow id="flow_handOverBikesToSiteDelivered" sourceRef="userTask_handOverBikes" targetRef="endEvent_siteDelivered" />
+      <bpmn:sequenceFlow id="flow_loadVanToHandOverBikes" sourceRef="userTask_loadVan" targetRef="userTask_handOverBikes" />
+      <bpmn:sequenceFlow id="flow_deliveryStartedToLoadVan" sourceRef="startEvent_deliveryStarted" targetRef="userTask_loadVan" />
+    </bpmn:subProcess>
+    <bpmn:serviceTask id="serviceTask_sendInvoice" name="Send invoice" camunda:type="external" camunda:topic="sendInvoice">
+      <bpmn:incoming>flow_deliverToSiteToSendInvoice</bpmn:incoming>
+      <bpmn:outgoing>flow_sendInvoiceToTestRide</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:endEvent id="endEvent_fleetDelivered" name="Fleet delivered">
+      <bpmn:incoming>flow_testRideToFleetDelivered</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:sequenceFlow id="flow_sendInvoiceToTestRide" sourceRef="serviceTask_sendInvoice" targetRef="serviceTask_testRide" />
+    <bpmn:serviceTask id="serviceTask_testRide" name="Test ride" camunda:type="external" camunda:topic="testRide" camunda:asyncBefore="true">
+      <bpmn:incoming>flow_sendInvoiceToTestRide</bpmn:incoming>
+      <bpmn:outgoing>flow_testRideToFleetDelivered</bpmn:outgoing>
+      <bpmn:multiInstanceLoopCharacteristics isSequential="true">
+        <bpmn:loopCardinality xsi:type="bpmn:tFormalExpression">${2}</bpmn:loopCardinality>
+      </bpmn:multiInstanceLoopCharacteristics>
+    </bpmn:serviceTask>
+    <bpmn:sequenceFlow id="flow_testRideToFleetDelivered" sourceRef="serviceTask_testRide" targetRef="endEvent_fleetDelivered" />
+    <bpmn:sequenceFlow id="flow_deliverToSiteToSendInvoice" sourceRef="subProcess_deliverToSite" targetRef="serviceTask_sendInvoice" />
+    <bpmn:sequenceFlow id="flow_assembleBikeToDeliverToSite" sourceRef="serviceTask_assembleBike" targetRef="subProcess_deliverToSite" />
+    <bpmn:sequenceFlow id="flow_fleetOrderReceivedToAssembleBike" sourceRef="startEvent_fleetOrderReceived" targetRef="serviceTask_assembleBike" />
+  </bpmn:process>
+  <bpmndi:BPMNDiagram id="BPMNDiagram_Process_FleetOrder">
+    <bpmndi:BPMNPlane id="BPMNPlane_Process_FleetOrder" bpmnElement="Process_FleetOrder">
+      <bpmndi:BPMNShape id="BPMNShape_startEvent_fleetOrderReceived" bpmnElement="startEvent_fleetOrderReceived">
+        <dc:Bounds x="80" y="140" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="54" y="182" width="89" height="28" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="BPMNShape_serviceTask_assembleBike" bpmnElement="serviceTask_assembleBike">
+        <dc:Bounds x="176" y="118" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="BPMNShape_subProcess_deliverToSite" bpmnElement="subProcess_deliverToSite" isExpanded="true">
+        <dc:Bounds x="336" y="80" width="512" height="155" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="BPMNShape_startEvent_deliveryStarted" bpmnElement="startEvent_deliveryStarted">
+        <dc:Bounds x="366" y="147" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="350" y="189" width="68" height="28" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="BPMNShape_userTask_loadVan" bpmnElement="userTask_loadVan">
+        <dc:Bounds x="462" y="125" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="BPMNShape_userTask_handOverBikes" bpmnElement="userTask_handOverBikes">
+        <dc:Bounds x="622" y="125" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="BPMNShape_endEvent_siteDelivered" bpmnElement="endEvent_siteDelivered">
+        <dc:Bounds x="782" y="147" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="763" y="189" width="75" height="28" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="BPMNEdge_flow_handOverBikesToSiteDelivered" bpmnElement="flow_handOverBikesToSiteDelivered">
+        <di:waypoint x="722" y="165" />
+        <di:waypoint x="782" y="165" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="BPMNEdge_flow_loadVanToHandOverBikes" bpmnElement="flow_loadVanToHandOverBikes">
+        <di:waypoint x="562" y="165" />
+        <di:waypoint x="622" y="165" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="BPMNEdge_flow_deliveryStartedToLoadVan" bpmnElement="flow_deliveryStartedToLoadVan">
+        <di:waypoint x="402" y="165" />
+        <di:waypoint x="462" y="165" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNShape id="BPMNShape_serviceTask_sendInvoice" bpmnElement="serviceTask_sendInvoice">
+        <dc:Bounds x="908" y="118" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="BPMNShape_endEvent_fleetDelivered" bpmnElement="endEvent_fleetDelivered">
+        <dc:Bounds x="1228" y="140" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1209" y="182" width="75" height="28" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="BPMNEdge_flow_sendInvoiceToTestRide" bpmnElement="flow_sendInvoiceToTestRide">
+        <di:waypoint x="1008" y="158" />
+        <di:waypoint x="1068" y="158" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="BPMNEdge_flow_deliverToSiteToSendInvoice" bpmnElement="flow_deliverToSiteToSendInvoice">
+        <di:waypoint x="848" y="158" />
+        <di:waypoint x="908" y="158" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="BPMNEdge_flow_assembleBikeToDeliverToSite" bpmnElement="flow_assembleBikeToDeliverToSite">
+        <di:waypoint x="276" y="158" />
+        <di:waypoint x="336" y="158" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="BPMNEdge_flow_fleetOrderReceivedToAssembleBike" bpmnElement="flow_fleetOrderReceivedToAssembleBike">
+        <di:waypoint x="116" y="158" />
+        <di:waypoint x="176" y="158" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNShape id="BPMNShape_serviceTask_testRide" bpmnElement="serviceTask_testRide">
+        <dc:Bounds x="1068" y="118" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="BPMNEdge_flow_testRideToFleetDelivered" bpmnElement="flow_testRideToFleetDelivered">
+        <di:waypoint x="1168" y="158" />
+        <di:waypoint x="1228" y="158" />
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>

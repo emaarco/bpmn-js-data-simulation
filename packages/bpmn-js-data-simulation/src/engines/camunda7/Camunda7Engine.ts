@@ -1,5 +1,5 @@
-import type { Evaluation, Mapping, Variables } from '../../domain/model.js'
-import { findExtension, listProperty, readConditionExpression } from '../../utils/moddle.js'
+import type { Evaluation, Mapping, MultiInstanceLoop, Variables } from '../../domain/model.js'
+import { findExtension, listProperty, readConditionExpression, readMultiInstanceLoop } from '../../utils/moddle.js'
 import type { EngineAdapter, ModdleElement, TaskResultPropagation } from '../types.js'
 import { JuelTemplate } from './juel/JuelTemplate.js'
 
@@ -24,6 +24,16 @@ export class Camunda7Engine implements EngineAdapter {
     const condition = readConditionExpression(sequenceFlow)
     const isJuel = !condition?.language || condition.language.toLowerCase() === 'juel'
     return isJuel ? condition?.body?.trim() || undefined : undefined
+  }
+
+  readLoop(activity: ModdleElement): MultiInstanceLoop | undefined {
+    const loop = readMultiInstanceLoop(activity)
+    if (!loop) return undefined
+    return {
+      mode: loop.mode,
+      cardinality: loop.cardinality,
+      collection: this.collectionExpression(loop.characteristics),
+    }
   }
 
   canEvaluate(expression: string): boolean {
@@ -52,6 +62,13 @@ export class Camunda7Engine implements EngineAdapter {
     } catch {
       return []
     }
+  }
+
+  private collectionExpression(characteristics: ModdleElement): string | undefined {
+    const collection = typeof characteristics.collection === 'string' ? characteristics.collection.trim() : ''
+    if (!collection) return undefined
+    const isVariableName = !/[$#]\{/.test(collection)
+    return isVariableName ? `\${${collection}}` : collection
   }
 
   private readMappings(element: ModdleElement, property: string): Mapping[] {

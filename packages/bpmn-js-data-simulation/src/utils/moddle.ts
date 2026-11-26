@@ -1,3 +1,4 @@
+import type { LoopMode } from '../domain/model.js'
 import type { ModdleElement } from '../engines/types.js'
 
 export function findExtension(element: ModdleElement, type: string): ModdleElement | undefined {
@@ -16,5 +17,18 @@ export function readConditionExpression(sequenceFlow: ModdleElement): { body?: s
   return {
     body: typeof condition.body === 'string' ? condition.body : undefined,
     language: typeof condition.language === 'string' ? condition.language : undefined,
+  }
+}
+
+export function readMultiInstanceLoop(
+  element: ModdleElement,
+): { characteristics: ModdleElement; mode: LoopMode; cardinality?: string } | undefined {
+  const characteristics = element.loopCharacteristics as ModdleElement | undefined
+  if (characteristics?.$type !== 'bpmn:MultiInstanceLoopCharacteristics') return undefined
+  const cardinality = (characteristics.loopCardinality as ModdleElement | undefined)?.body
+  return {
+    characteristics,
+    mode: characteristics.isSequential ? 'sequential' : 'parallel',
+    cardinality: typeof cardinality === 'string' ? cardinality.trim() || undefined : undefined,
   }
 }

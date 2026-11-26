@@ -107,3 +107,22 @@ export type PathVariable =
   | { name: string; type: 'number'; range: NumberRange }
   | { name: string; type: 'text' }
   | { name: string; type: 'json' }
+
+export type LoopMode = 'parallel' | 'sequential'
+
+export interface MultiInstanceLoop {
+  mode: LoopMode
+  cardinality?: string
+  collection?: string
+}
+
+export type InstanceCountSource = 'cardinality' | 'collection' | 'default'
+
+export interface InstanceCount {
+  count: number
+  source: InstanceCountSource
+  expression?: string
+  reason?: string
+}
+
+export type LoopInstanceStatus = 'waiting' | 'running' | 'done'
