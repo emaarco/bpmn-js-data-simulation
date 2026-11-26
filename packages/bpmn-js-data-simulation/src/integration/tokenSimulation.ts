@@ -18,6 +18,8 @@ export interface DiagramElement {
   parent?: DiagramElement
   children?: DiagramElement[]
   source?: DiagramElement
+  target?: DiagramElement
+  labels?: DiagramElement[]
 }
 
 export interface Scope {
@@ -77,4 +79,5 @@ export interface Canvas {
 
 export interface ElementRegistry {
   get(id: string): DiagramElement | undefined
+  filter(predicate: (element: DiagramElement) => boolean): DiagramElement[]
 }

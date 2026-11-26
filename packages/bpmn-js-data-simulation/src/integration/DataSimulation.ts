@@ -1,4 +1,5 @@
-import type { Variables } from '../domain/model.js'
+import type { PathResolution, Variables } from '../domain/model.js'
+import { PathResolver } from '../domain/PathResolver.js'
 import { ScenarioParser } from '../domain/ScenarioParser.js'
 import { EngineRegistry } from '../engines/EngineRegistry.js'
 import type { EngineAdapter, EngineId } from '../engines/types.js'
@@ -6,9 +7,13 @@ import type { DataSimulationStore, SimulationListener, SimulationSnapshot } from
 import type { StartFormRenderer } from '../ui/startForm.js'
 import { elementName, findProcessInstance, is } from '../utils/diagramElements.js'
 import { IoMappings } from './IoMappings.js'
+import { PathGraphReader } from './PathGraphReader.js'
+import { PathMarkers } from './PathMarkers.js'
 import {
+  type Canvas,
   DATA_TOGGLE_EVENT,
   type DiagramElement,
+  type ElementRegistry,
   type EventBus,
   RESET_SIMULATION_EVENT,
   SCOPE_CREATE_EVENT,
@@ -25,21 +30,32 @@ export interface DataSimulationConfig {
   enabled?: boolean
 }
 
+export interface ResolveOptions {
+  measures?: string[]
+}
+
 export class DataSimulation {
-  static $inject = ['config.dataSimulation', 'eventBus', 'dataSimulationStore']
+  static $inject = ['config.dataSimulation', 'eventBus', 'dataSimulationStore', 'elementRegistry', 'canvas']
 
   private readonly engine: EngineAdapter
   private readonly ioMappings: IoMappings
   private readonly scenarioParser = new ScenarioParser()
+  private readonly pathResolver = new PathResolver()
+  private readonly pathGraphReader: PathGraphReader
+  private readonly pathMarkers: PathMarkers
   private enabled: boolean
 
   constructor(
     config: DataSimulationConfig | undefined,
     private readonly eventBus: EventBus,
     private readonly store: DataSimulationStore,
+    elementRegistry: ElementRegistry,
+    canvas: Canvas,
   ) {
     this.engine = new EngineRegistry().resolve(config?.engine ?? 'zeebe')
     this.ioMappings = new IoMappings(this.engine, store)
+    this.pathGraphReader = new PathGraphReader(elementRegistry, this.engine)
+    this.pathMarkers = new PathMarkers(canvas, elementRegistry)
     this.enabled = config?.enabled ?? true
     this.store.setEngine(this.engine.label, this.engine.expressionLanguage)
     if (config?.scenarios !== undefined) this.setScenarios(config.scenarios)
@@ -100,6 +116,17 @@ export class DataSimulation {
 
   subscribe(listener: SimulationListener): () => void {
     return this.store.subscribe(listener)
+  }
+
+  resolve(variables: Variables, options: ResolveOptions = {}): PathResolution {
+    const graph = this.pathGraphReader.read(options.measures ?? [])
+    const resolution = this.pathResolver.resolve(graph, expression => this.engine.evaluate(expression, variables))
+    this.pathMarkers.show(resolution)
+    return resolution
+  }
+
+  clearResolution(): void {
+    this.pathMarkers.clear()
   }
 
   private onScopeCreated(scope: Scope): void {

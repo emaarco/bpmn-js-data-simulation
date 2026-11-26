@@ -64,6 +64,23 @@ A gateway that decided turns green, one the token is stuck at turns red. Each fl
 
 Like the simulation log, Process Data has a button in the token simulation palette (`{ }`, below the log) and opens a panel on the right; with both open, the log moves aside. The panel shows the variables of the selected instance and, when output mappings fail, their issues. It follows the newest instance; with several instances a picker appears. **Edit** changes the variables of a running instance, e.g. to fix a value a gateway got stuck on, then ▶ on the gateway evaluates it again.
 
+## What-if
+
+`resolve(variables)` answers "which way does it go for this data?" without a token or an instance: the gateways decide right away and the path is marked on the diagram. Call it again on every change, e.g. from a slider:
+
+```ts
+slider.addEventListener('input', () => {
+  const { taken, skipped, decisions } = dataSimulation.resolve({ orderTotal: slider.valueAsNumber, creditworthy: true })
+  console.log(decisions.Gateway_Credit.takenFlowIds) // ['Flow_Review']
+})
+```
+
+- **Same evaluation as the simulation:** FEEL or JUEL conditions of the selected engine, default flows, first true flow for exclusive gateways, every true flow for inclusive ones.
+- **Path:** it starts at the process's start events, enters sub-processes, and follows every outgoing flow of anything that is no exclusive or inclusive gateway. Boundary events and event sub-processes are not on the path. Mappings and task results are not applied, so pass every variable the conditions read.
+- **Result:** `taken` and `skipped` list the ids of flow nodes and sequence flows, `decisions` holds the `RoutingDecision` of every gateway on the path, with `stuckReason` when it cannot decide. Nothing behind such a gateway is taken.
+- **Markers:** `bds-path--taken` and `bds-path--skipped` on every element (and its label), `bds-path--stuck` on a gateway that cannot decide. Skipped elements fade, taken ones are drawn in the accent colour; tune it with `--bds-path-taken` and `--bds-path-skipped-opacity`, or style the markers yourself. `clearResolution()` removes them.
+- **Measures:** `resolve(variables, { measures: ['sim:duration'] })` sums numeric attributes of the elements on the path, e.g. a lead time, in `measures`. Declare the attribute's namespace in the diagram (`xmlns:sim="…"` and `<bpmn:task sim:duration="2">`); elements without it count as 0.
+
 ## Styling
 
 The add-on renders its panel, dialog, cards and badges in shadow roots, so the styles of the page around it (a slide theme, a CMS) cannot change them. Adjust them through the CSS variables instead: `--bds-*` from the add-on's stylesheet and `--token-simulation-*` from the token simulation. The start dialog is attached to `document.body`, so it stays fully visible even on a small canvas.
@@ -79,6 +96,7 @@ dataSimulation.setStartVariables({ orderTotal: 9000 }) // prefilled in the start
 dataSimulation.selectInstance(instanceId)
 dataSimulation.setInstanceVariables(instanceId, { orderTotal: 450 })
 dataSimulation.setEnabled(false) // back to the plain token simulation
+dataSimulation.resolve({ orderTotal: 9000 }) // what-if: the path for these variables, marked on the diagram
 dataSimulation.subscribe(snapshot => console.log(snapshot.instances, snapshot.log))
 ```
 

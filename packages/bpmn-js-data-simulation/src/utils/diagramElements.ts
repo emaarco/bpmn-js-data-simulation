@@ -1,3 +1,5 @@
+import type { OutgoingFlow } from '../domain/model.js'
+import type { EngineAdapter } from '../engines/types.js'
 import type { DiagramElement, Scope } from '../integration/tokenSimulation.js'
 
 export function findProcessInstance(scope: Scope): Scope {
@@ -24,4 +26,18 @@ export function gatewayOf(element: DiagramElement): string | undefined {
   if (isGateway(element)) return element.id
   if (element.type === 'bpmn:SequenceFlow' && element.source && isGateway(element.source)) return element.source.id
   return undefined
+}
+
+export function outgoingSequenceFlows(element: DiagramElement): DiagramElement[] {
+  return (element.outgoing ?? []).filter(flow => is(flow, 'bpmn:SequenceFlow'))
+}
+
+export function readOutgoingFlow(sequenceFlow: DiagramElement, engine: EngineAdapter): OutgoingFlow {
+  const name = sequenceFlow.businessObject.name
+  return {
+    id: sequenceFlow.id,
+    ...(typeof name === 'string' && name ? { name } : {}),
+    expression: engine.readCondition(sequenceFlow.businessObject),
+    isDefault: sequenceFlow.source?.businessObject.default === sequenceFlow.businessObject,
+  }
 }

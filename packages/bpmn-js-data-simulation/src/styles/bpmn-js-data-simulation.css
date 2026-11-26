@@ -21,6 +21,8 @@
   --bds-danger-soft: rgba(201, 42, 42, 0.12);
   --bds-gateway-decided-fill: #e7f3ee;
   --bds-gateway-stuck-fill: #fbe9e9;
+  --bds-path-taken: var(--bds-accent);
+  --bds-path-skipped-opacity: 0.25;
 
   --bds-space-1: 4px;
   --bds-space-2: 8px;
@@ -65,6 +67,29 @@
 .djs-element.bds-gateway--decided.hover .djs-visual > polygon,
 .djs-element.bds-gateway--stuck.hover .djs-visual > polygon {
   stroke-width: 3px !important;
+}
+
+.djs-element.bds-path--taken,
+.djs-element.bds-path--skipped {
+  transition: opacity var(--bds-motion-fast) var(--bds-ease);
+}
+
+.djs-element.bds-path--skipped {
+  opacity: var(--bds-path-skipped-opacity);
+}
+
+.djs-shape.bds-path--taken .djs-visual > :is(rect, circle, polygon) {
+  stroke: var(--bds-path-taken) !important;
+}
+
+.djs-connection.bds-path--taken .djs-visual > path {
+  stroke: var(--bds-path-taken) !important;
+  stroke-width: 2px !important;
+}
+
+.djs-element.bds-path--stuck .djs-visual > polygon {
+  fill: var(--bds-gateway-stuck-fill) !important;
+  stroke: var(--bds-danger) !important;
 }
 
 .bds-palette-entry svg {

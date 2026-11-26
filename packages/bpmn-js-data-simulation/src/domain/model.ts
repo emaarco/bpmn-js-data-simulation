@@ -62,3 +62,27 @@ export interface StartFieldHints {
   examples?: Variables[]
   taskResultNames?: string[]
 }
+
+export interface PathFlow extends OutgoingFlow {
+  targetId: string
+}
+
+export interface PathNode {
+  id: string
+  gatewayKind?: GatewayKind
+  outgoing: PathFlow[]
+  nestedStartIds: string[]
+  measures: Record<string, number>
+}
+
+export interface PathGraph {
+  startIds: string[]
+  nodes: PathNode[]
+}
+
+export interface PathResolution {
+  taken: string[]
+  skipped: string[]
+  decisions: Record<string, RoutingDecision>
+  measures: Record<string, number>
+}
