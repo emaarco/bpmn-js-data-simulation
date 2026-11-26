@@ -98,11 +98,23 @@ slider.addEventListener('input', () => {
 `DataSimulationModule` already includes it: with the modeler set up as above, `modeler.get('pathSimulation')` is there too and uses the same engine. The add-on does not clear the path when simulation mode is switched on; call `clear()` from your own UI, as the [example](../packages/example/src/WhatIfPanel.ts) does.
 
 - **Same evaluation as the simulation:** FEEL or JUEL conditions of the selected engine, default flows, first true flow for exclusive gateways, every true flow for inclusive ones.
-- **Path:** it starts at the process's start events, enters sub-processes, and follows every outgoing flow of anything that is no exclusive or inclusive gateway. Boundary events and event sub-processes are not on the path. Mappings and task results are not applied, so pass every variable the conditions read.
+- **Path:** it starts at the process's start events, enters sub-processes, and follows every outgoing flow of anything that is no exclusive or inclusive gateway. Boundary events and event sub-processes are not on the path. Mappings and task results are not applied, so pass every variable the conditions read, e.g. from `variablesOf`.
 - **Result:** a `SimulatedPath`. `taken` and `skipped` list the ids of flow nodes and sequence flows, `decisions` holds the `RoutingDecision` of every gateway on the path, with `stuckReason` when it cannot decide. Nothing behind such a gateway is taken.
 - **Markers:** `bds-path--taken` and `bds-path--skipped` on every element (and its label), `bds-path--stuck` on a gateway that cannot decide. Skipped elements fade, taken ones are drawn in the accent colour; tune it with `--bds-path-taken` and `--bds-path-skipped-opacity`, or style the markers yourself. `clear()` removes them.
 - **Measures:** `simulate(variables, { measures: ['sim:duration'] })` sums numeric attributes of the elements on the path, e.g. a lead time, in `measures`. Declare the attribute's namespace in the diagram (`xmlns:sim="…"` and `<bpmn:task sim:duration="2">`); elements without it count as 0.
-- **Controls:** `getEngine().readVariableNames(expression)` lists the variables a condition reads, so a host can derive its sliders and switches from the diagram.
+- **Controls:** `deriveVariables(values)` lists every variable the evaluable conditions read as a `PathVariable`, so a host renders its sliders and switches from the diagram instead of hard-coding them. `type` follows the current value: `boolean`, `number`, `text` (a string, or no value yet) or `json` (lists and objects). A `number` carries a `range` for a slider: from 0 to twice the larger of the value and the numbers the conditions compare it with, rounded up to 1, 2 or 5 times a power of ten, in 100 steps.
+- **Values from a scenario:** `variablesOf(scenario, fallbacks)` gives the scenario's variables and task results after the output mappings of the diagram, e.g. a `creditworthy` computed from a task's `score`. Pass the other scenarios as `fallbacks` to fill in what the scenario lacks; the scenario wins. Without a scenario it returns what the fallbacks give.
+
+```ts
+const { scenarios } = dataSimulation.getSnapshot()
+const values = pathSimulation.variablesOf(scenarios[0], scenarios)
+
+for (const variable of pathSimulation.deriveVariables(values)) {
+  if (variable.type === 'number') renderSlider(variable.name, variable.range) // { min: 0, max: 10000, step: 100 }
+  if (variable.type === 'boolean') renderSwitch(variable.name)
+}
+pathSimulation.simulate(values)
+```
 
 ## Styling
 
@@ -126,6 +138,8 @@ const pathSimulation = modeler.get<PathSimulation>('pathSimulation')
 pathSimulation.simulate({ orderTotal: 9000 }) // what-if: the path for these variables, marked on the diagram
 pathSimulation.clear()
 pathSimulation.getEngine() // the engine adapter, shared with dataSimulation
+pathSimulation.deriveVariables({ orderTotal: 9000 }) // the variables the conditions read, typed for a control
+pathSimulation.variablesOf(scenario, otherScenarios) // a scenario's variables after the output mappings
 ```
 
 The engine-neutral core is exported too (`GatewayRouter`, `ScenarioParser`, `ZeebeEngine`, `Camunda7Engine` and their ready-made instances `zeebeEngine` and `camunda7Engine`, `EngineRegistry`, `DataSimulationStore`), for tests or headless use.
