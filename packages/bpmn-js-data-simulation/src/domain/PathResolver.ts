@@ -1,10 +1,10 @@
 import { type EvaluateCondition, GatewayRouter } from './GatewayRouter.js'
-import type { PathFlow, PathGraph, PathNode, PathResolution, RoutingDecision } from './model.js'
+import type { PathFlow, PathGraph, PathNode, RoutingDecision, SimulatedPath } from './model.js'
 
 export class PathResolver {
   private readonly router = new GatewayRouter()
 
-  resolve(graph: PathGraph, evaluateCondition: EvaluateCondition): PathResolution {
+  resolve(graph: PathGraph, evaluateCondition: EvaluateCondition): SimulatedPath {
     const nodes = new Map(graph.nodes.map(node => [node.id, node]))
     const takenIds = new Set<string>()
     const decisions: Record<string, RoutingDecision> = {}

@@ -35,8 +35,14 @@ for (const [label, bundle] of [
   for (const service of ['dataSimulation', 'dataGatewayBehaviors', 'dataGatewaySettings', 'dataContextPads']) {
     assert.ok(Array.isArray(module[service]), `${label} default export has no "${service}" service`)
   }
+  assert.equal(bundle.DataSimulationModule, module, `${label} DataSimulationModule is not the default export`)
+  assert.ok(Array.isArray(bundle.PathSimulationModule?.pathSimulation), `${label} PathSimulationModule has no service`)
+  assert.ok(
+    module.__depends__?.includes(bundle.PathSimulationModule),
+    `${label} default export misses PathSimulationModule`,
+  )
 }
 
 assert.ok(existsSync(new URL('../../dist/assets/bpmn-js-data-simulation.css', import.meta.url)), 'stylesheet missing')
 
-console.log('distro smoke ok — engines, store and didi module present in ESM + CJS')
+console.log('distro smoke ok — engines, store and both didi modules present in ESM + CJS')

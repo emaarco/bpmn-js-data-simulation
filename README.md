@@ -17,7 +17,7 @@ Seeing the path a process takes for given data usually means deploying it. The t
 ## What you get
 
 - **See why a path is taken:** gateways that decided turn green, and a card lists each condition, its result and the values it read.
-- **Show the path without running it:** `dataSimulation.resolve(variables)` marks the path the exclusive and inclusive gateways take, for example behind a slider ([what-if](docs/usage.md#what-if)).
+- **Show the path without running it:** `pathSimulation.simulate(variables)` marks the path the exclusive and inclusive gateways take, for example behind a slider, even in a plain viewer without the token simulation ([path simulation](docs/usage.md#path-simulation-what-if)).
 - **Start from a scenario:** the token simulation's ▶ opens a dialog prefilled from a [scenario file](docs/scenarios.md) that also mocks task results.
 - **Fail visibly:** if no flow matches or a condition fails, the token stops at a red gateway, like an incident.
 - **Works in modelers and viewers:** one more module next to the token simulation.
@@ -39,7 +39,13 @@ Conditions it cannot evaluate, such as JUEL method calls or scripts, fall back t
 npm install @emaarco/bpmn-js-data-simulation bpmn-js-token-simulation zeebe-bpmn-moddle
 ```
 
-It needs `bpmn-js` 18 or newer; for Camunda 7, install `camunda-bpmn-moddle` instead of `zeebe-bpmn-moddle`.
+It needs `bpmn-js` 18 or newer; for Camunda 7, install `camunda-bpmn-moddle` instead of `zeebe-bpmn-moddle`. The full simulation needs `bpmn-js-token-simulation` in your own dependencies, as above; it is an optional peer, so npm does not add it for you.
+
+For the path alone (`PathSimulationModule`), leave the token simulation out:
+
+```bash
+npm install @emaarco/bpmn-js-data-simulation zeebe-bpmn-moddle
+```
 
 ## Get started
 
@@ -66,7 +72,7 @@ It needs `bpmn-js` 18 or newer; for Camunda 7, install `camunda-bpmn-moddle` ins
 2. Turn on the **Token Simulation** switch at the top left and press ▶ on a start event.
 3. Fill in the variables, start, and hover a gateway to see why it decided.
 
-From code, `modeler.get('dataSimulation').resolve({ orderTotal: 6800 })` marks the path instead. Full walk-through: [Usage](docs/usage.md).
+From code, `modeler.get('pathSimulation').simulate({ orderTotal: 6800 })` marks the path instead; a viewer with only `PathSimulationModule` does the same without the token simulation. Full walk-through: [Usage](docs/usage.md).
 
 ## Help and feedback
 

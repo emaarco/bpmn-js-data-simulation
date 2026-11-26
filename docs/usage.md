@@ -64,22 +64,45 @@ A gateway that decided turns green, one the token is stuck at turns red. Each fl
 
 Like the simulation log, Process Data has a button in the token simulation palette (`{ }`, below the log) and opens a panel on the right; with both open, the log moves aside. The panel shows the variables of the selected instance and, when output mappings fail, their issues. It follows the newest instance; with several instances a picker appears. **Edit** changes the variables of a running instance, e.g. to fix a value a gateway got stuck on, then ▶ on the gateway evaluates it again.
 
-## What-if
+## Path simulation (what-if)
 
-`resolve(variables)` answers "which way does it go for this data?" without a token or an instance: the gateways decide right away and the path is marked on the diagram. It needs the modules set up as above, token simulation included, but not simulation mode. Call it again on every change, e.g. from a slider:
+`pathSimulation.simulate(variables)` answers "which way does it go for this data?" without a token or an instance: the gateways decide right away and the path is marked on the diagram. It is meant for outside simulation mode, e.g. a slide with a slider or a docs page with a viewer.
+
+`PathSimulationModule` needs no token simulation, so a plain viewer is enough:
 
 ```ts
+import NavigatedViewer from 'bpmn-js/lib/NavigatedViewer'
+import { PathSimulationModule, type PathSimulation } from '@emaarco/bpmn-js-data-simulation'
+import zeebeModdle from 'zeebe-bpmn-moddle/resources/zeebe.json'
+
+import '@emaarco/bpmn-js-data-simulation/assets/bpmn-js-data-simulation.css'
+
+const viewer = new NavigatedViewer({
+  container: '#canvas',
+  additionalModules: [PathSimulationModule],
+  moddleExtensions: { zeebe: zeebeModdle },
+  dataSimulation: { engine: 'zeebe' }, // only `engine` is read; optional, default 'zeebe'
+})
+await viewer.importXML(bpmnXml)
+
+const pathSimulation = viewer.get<PathSimulation>('pathSimulation')
 slider.addEventListener('input', () => {
-  const { taken, skipped, decisions } = dataSimulation.resolve({ orderTotal: slider.valueAsNumber, creditworthy: true })
+  const { taken, skipped, decisions } = pathSimulation.simulate({
+    orderTotal: slider.valueAsNumber,
+    creditworthy: true,
+  })
   console.log(decisions.Gateway_Credit.takenFlowIds) // ['Flow_Review']
 })
 ```
 
+`DataSimulationModule` already includes it: with the modeler set up as above, `modeler.get('pathSimulation')` is there too and uses the same engine. The add-on does not clear the path when simulation mode is switched on; call `clear()` from your own UI, as the [example](../packages/example/src/WhatIfPanel.ts) does.
+
 - **Same evaluation as the simulation:** FEEL or JUEL conditions of the selected engine, default flows, first true flow for exclusive gateways, every true flow for inclusive ones.
 - **Path:** it starts at the process's start events, enters sub-processes, and follows every outgoing flow of anything that is no exclusive or inclusive gateway. Boundary events and event sub-processes are not on the path. Mappings and task results are not applied, so pass every variable the conditions read.
-- **Result:** `taken` and `skipped` list the ids of flow nodes and sequence flows, `decisions` holds the `RoutingDecision` of every gateway on the path, with `stuckReason` when it cannot decide. Nothing behind such a gateway is taken.
-- **Markers:** `bds-path--taken` and `bds-path--skipped` on every element (and its label), `bds-path--stuck` on a gateway that cannot decide. Skipped elements fade, taken ones are drawn in the accent colour; tune it with `--bds-path-taken` and `--bds-path-skipped-opacity`, or style the markers yourself. `clearResolution()` removes them.
-- **Measures:** `resolve(variables, { measures: ['sim:duration'] })` sums numeric attributes of the elements on the path, e.g. a lead time, in `measures`. Declare the attribute's namespace in the diagram (`xmlns:sim="…"` and `<bpmn:task sim:duration="2">`); elements without it count as 0.
+- **Result:** a `SimulatedPath`. `taken` and `skipped` list the ids of flow nodes and sequence flows, `decisions` holds the `RoutingDecision` of every gateway on the path, with `stuckReason` when it cannot decide. Nothing behind such a gateway is taken.
+- **Markers:** `bds-path--taken` and `bds-path--skipped` on every element (and its label), `bds-path--stuck` on a gateway that cannot decide. Skipped elements fade, taken ones are drawn in the accent colour; tune it with `--bds-path-taken` and `--bds-path-skipped-opacity`, or style the markers yourself. `clear()` removes them.
+- **Measures:** `simulate(variables, { measures: ['sim:duration'] })` sums numeric attributes of the elements on the path, e.g. a lead time, in `measures`. Declare the attribute's namespace in the diagram (`xmlns:sim="…"` and `<bpmn:task sim:duration="2">`); elements without it count as 0.
+- **Controls:** `getEngine().readVariableNames(expression)` lists the variables a condition reads, so a host can derive its sliders and switches from the diagram.
 
 ## Styling
 
@@ -96,8 +119,13 @@ dataSimulation.setStartVariables({ orderTotal: 9000 }) // prefilled in the start
 dataSimulation.selectInstance(instanceId)
 dataSimulation.setInstanceVariables(instanceId, { orderTotal: 450 })
 dataSimulation.setEnabled(false) // back to the plain token simulation
-dataSimulation.resolve({ orderTotal: 9000 }) // what-if: the path for these variables, marked on the diagram
 dataSimulation.subscribe(snapshot => console.log(snapshot.instances, snapshot.log))
+
+const pathSimulation = modeler.get<PathSimulation>('pathSimulation')
+
+pathSimulation.simulate({ orderTotal: 9000 }) // what-if: the path for these variables, marked on the diagram
+pathSimulation.clear()
+pathSimulation.getEngine() // the engine adapter, shared with dataSimulation
 ```
 
 The engine-neutral core is exported too (`GatewayRouter`, `ScenarioParser`, `ZeebeEngine`, `Camunda7Engine` and their ready-made instances `zeebeEngine` and `camunda7Engine`, `EngineRegistry`, `DataSimulationStore`), for tests or headless use.

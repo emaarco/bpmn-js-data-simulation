@@ -102,7 +102,7 @@
   stroke-linejoin: round;
 }
 
-.bds-palette-entry[hidden] {
+.bts-palette .bds-palette-entry[hidden] {
   display: none;
 }
 

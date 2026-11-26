@@ -24,7 +24,8 @@ During `dev`, Vite aliases `@emaarco/bpmn-js-data-simulation` straight to the si
   - **`bike-order.camunda7.bpmn`**: the same order process with `camunda:inputOutput` and JUEL.
   - **`return-handling.camunda7.bpmn`**: a gateway with JavaScript conditions that falls back to the click.
 - Starting instances through the start dialog, prefilled from the scenarios.
-- **What-if** next to the menu: a control for every variable the conditions read (prefilled from a scenario) drives `dataSimulation.resolve()`, so the gateways decide and the path is marked on every change, without a token.
+- **What-if** next to the menu: a control for every variable the conditions read (prefilled from a scenario) drives `pathSimulation.simulate()`, so the gateways decide and the path is marked on every change, without a token.
+- **[`path-simulation.html`](./path-simulation.html)**: a plain `NavigatedViewer` with only `PathSimulationModule`, the Bike Order example and an `orderTotal` slider. No token simulation is loaded; it is the reference integration for slides and docs pages.
 - Opening or dropping your own `.bpmn` (engine detected from its namespace) or a scenario `.json`, and a share link that encodes model and scenarios in the URL.
 
 ## End-to-end tests
@@ -39,15 +40,17 @@ npm run test:e2e   # from the repo root
 
 ```
 example/
-├─ index.html          # canvas, burger menu with the example picker, properties panel
+├─ index.html                  # canvas, burger menu with the example picker, properties panel
+├─ path-simulation.html        # viewer-only page: path simulation without the token simulation
 ├─ src/
-│  ├─ main.ts          # entry point, starts the ExampleApp
-│  ├─ ExampleApp.ts    # menu, file import, share link, start-up
-│  ├─ Editor.ts        # creates the modeler per engine and loads models + scenarios
-│  ├─ HashAutosave.ts  # keeps the URL hash in sync with the model
-│  ├─ ShareLink.ts     # encodes model + scenarios into the URL hash
-│  ├─ utils/           # pure helpers (engine detection, base64url, byte streams)
-│  └─ style.css        # demo-app chrome (not part of the library)
-├─ public/examples/    # sample .bpmn models with their scenarios
-└─ e2e/                # Playwright specs
+│  ├─ main.ts                  # entry point, starts the ExampleApp
+│  ├─ ExampleApp.ts            # menu, file import, share link, start-up
+│  ├─ Editor.ts                # creates the modeler per engine and loads models + scenarios
+│  ├─ HashAutosave.ts          # keeps the URL hash in sync with the model
+│  ├─ ShareLink.ts             # encodes model + scenarios into the URL hash
+│  ├─ PathSimulationViewer.ts  # entry of path-simulation.html
+│  ├─ utils/                   # pure helpers (engine detection, base64url, byte streams)
+│  └─ style.css                # demo-app chrome (not part of the library)
+├─ public/examples/            # sample .bpmn models with their scenarios
+└─ e2e/                        # Playwright specs
 ```

@@ -80,7 +80,7 @@ export interface PathGraph {
   nodes: PathNode[]
 }
 
-export interface PathResolution {
+export interface SimulatedPath {
   taken: string[]
   skipped: string[]
   decisions: Record<string, RoutingDecision>

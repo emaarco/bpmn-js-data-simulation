@@ -1,5 +1,11 @@
 // @vitest-environment jsdom
+import SimulatorModule from 'bpmn-js-token-simulation/lib/simulator'
+import { Injector } from 'didi'
+import EventBus from 'diagram-js/lib/core/EventBus'
 import { describe, expect, it, vi } from 'vitest'
+import { DataSimulationModule, PathSimulationModule } from '../../src'
+import type { DataSimulation } from '../../src/integration/DataSimulation'
+import type { PathSimulation } from '../../src/integration/PathSimulation'
 import type { DataStartForm } from '../../src/integration/DataStartForm'
 import type { DecisionLogEntry, MappingIssueLogEntry } from '../../src/simulation/DataSimulationStore'
 import { createHarness, type Harness, harnessFor } from './harness'
@@ -261,6 +267,55 @@ describe('gateways the engine cannot evaluate', () => {
     })
   })
 })
+
+describe('path simulation inside the data simulation', () => {
+  it('comes with DataSimulationModule and is the only home of the path', async () => {
+    const harness = await harnessFor('order-zeebe.bpmn', 'zeebe', orderScenarios)
+
+    expect(harness.injector.get<PathSimulation>('pathSimulation').simulate).toBeTypeOf('function')
+    expect(harness.dataSimulation).not.toHaveProperty('resolve')
+    expect(harness.dataSimulation).not.toHaveProperty('clearResolution')
+  })
+
+  it('starts no instance', async () => {
+    const harness = await harnessFor('order-zeebe.bpmn', 'zeebe', orderScenarios)
+
+    harness.injector.get<PathSimulation>('pathSimulation').simulate({ creditworthy: true, orderTotal: 1200 })
+
+    expect(harness.dataSimulation.getSnapshot()).toMatchObject({ instances: [], log: [] })
+    expect(harness.entered).toEqual([])
+  })
+
+  it('loads once and shares the engine when both modules are registered', () => {
+    const injector = injectorWith([SimulatorModule, PathSimulationModule, DataSimulationModule])
+
+    expect(injector.get<PathSimulation>('pathSimulation').getEngine()).toBe(
+      injector.get<DataSimulation>('dataSimulation').getEngine(),
+    )
+  })
+
+  it('names PathSimulationModule when the token simulation is missing', () => {
+    const injector = injectorWith([DataSimulationModule])
+
+    expect(() => injector.get('dataSimulation')).toThrow(
+      'DataSimulationModule needs bpmn-js-token-simulation; for the path alone use PathSimulationModule',
+    )
+  })
+})
+
+function injectorWith(modules: object[]): Injector {
+  const elementRegistry = { get: () => undefined, filter: () => [] }
+  const canvas = { addMarker: vi.fn(), removeMarker: vi.fn() }
+  return new Injector([
+    {
+      eventBus: ['type', EventBus],
+      elementRegistry: ['value', elementRegistry],
+      canvas: ['value', canvas],
+      'config.dataSimulation': ['value', {}],
+    },
+    ...modules,
+  ] as any)
+}
 
 function isMarkedStuck(harness: Harness, gatewayId: string): boolean {
   const waitingAt = harness.dataSimulation

@@ -5,9 +5,9 @@ export type {
   GatewayKind,
   Mapping,
   OutgoingFlow,
-  PathResolution,
   RoutingDecision,
   Scenario,
+  SimulatedPath,
   StartField,
   StartFieldType,
   Variables,
@@ -38,5 +38,11 @@ export type {
 export type { FormValues, RenderedStartForm, StartFormRenderer } from './ui/startForm.js'
 export { SimpleStartFormRenderer } from './ui/SimpleStartFormRenderer.js'
 
-export type { DataSimulation, DataSimulationConfig, ResolveOptions } from './integration/DataSimulation.js'
-export { default, type DataSimulationModuleDeclaration } from './integration/index.js'
+export type { DataSimulation, DataSimulationConfig } from './integration/DataSimulation.js'
+export {
+  DataSimulationModule,
+  DataSimulationModule as default,
+  type DataSimulationModuleDeclaration,
+  PathSimulationModule,
+} from './integration/index.js'
+export type { PathSimulation, PathSimulationConfig, PathSimulationOptions } from './integration/PathSimulation.js'

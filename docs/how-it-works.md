@@ -11,6 +11,8 @@ These are internal APIs without a stability guarantee. So the add-on accepts any
 
 The add-on imports nothing from bpmn-js or the token simulation; it reaches them only through the injector. Its build therefore loads in plain Node (ESM and CommonJS) and in Vitest without extra config, e.g. in the unit tests of an app that uses it. A consumer test installs the packed build into a fresh project to keep it that way. Register it next to the token simulation module; the order does not matter.
 
+The package ships two modules. `DataSimulationModule` is the full data simulation and needs `bpmn-js-token-simulation` next to it; without it, it throws a readable error. `PathSimulationModule` holds only the path simulation (`pathSimulation`) and needs nothing but `elementRegistry` and `canvas`, so a plain viewer can load it; `DataSimulationModule` includes it.
+
 ## Decisions
 
 The answers this version gives to the open questions of [slidev-addon-diagram-js#135](https://github.com/emaarco/slidev-addon-diagram-js/issues/135):

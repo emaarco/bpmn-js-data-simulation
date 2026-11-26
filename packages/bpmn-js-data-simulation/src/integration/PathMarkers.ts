@@ -1,4 +1,4 @@
-import type { PathResolution } from '../domain/model.js'
+import type { SimulatedPath } from '../domain/model.js'
 import type { Canvas, DiagramElement, ElementRegistry } from './tokenSimulation.js'
 
 const TAKEN_MARKER = 'bds-path--taken'
@@ -13,11 +13,11 @@ export class PathMarkers {
     private readonly elementRegistry: ElementRegistry,
   ) {}
 
-  show(resolution: PathResolution): void {
+  show(path: SimulatedPath): void {
     this.clear()
-    for (const id of resolution.taken) this.mark(id, TAKEN_MARKER)
-    for (const id of resolution.skipped) this.mark(id, SKIPPED_MARKER)
-    for (const [gatewayId, decision] of Object.entries(resolution.decisions)) {
+    for (const id of path.taken) this.mark(id, TAKEN_MARKER)
+    for (const id of path.skipped) this.mark(id, SKIPPED_MARKER)
+    for (const [gatewayId, decision] of Object.entries(path.decisions)) {
       if (decision.stuckReason) this.mark(gatewayId, STUCK_MARKER)
     }
   }

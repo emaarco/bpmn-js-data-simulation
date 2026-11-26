@@ -7,6 +7,14 @@ export default defineConfig(({ command }) => ({
   base: './',
   server: { port: 5179, strictPort: true },
   preview: { port: 5179, strictPort: true },
+  build: {
+    rolldownOptions: {
+      input: {
+        main: fileURLToPath(new URL('index.html', import.meta.url)),
+        pathSimulation: fileURLToPath(new URL('path-simulation.html', import.meta.url)),
+      },
+    },
+  },
   resolve: {
     alias:
       command === 'serve'
