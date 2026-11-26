@@ -1,9 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<bpmn:definitions xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:camunda="http://camunda.org/schema/1.0/bpmn" id="Definitions_Order" targetNamespace="http://bpmn.io/schema/bpmn">
-  <bpmn:process id="Process_Order" name="Order fulfilment" isExecutable="true">
-    <bpmn:startEvent id="Start" name="Order received" />
-    <bpmn:sequenceFlow id="Flow_Start" sourceRef="Start" targetRef="Task_CheckCredit" />
-    <bpmn:serviceTask id="Task_CheckCredit" name="Check credit rating">
+<bpmn:definitions xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:camunda="http://camunda.org/schema/1.0/bpmn" id="Definitions_Order" targetNamespace="http://bpmn.io/schema/bpmn">
+  <bpmn:process id="Process_Order" name="Order fulfilment" isExecutable="true" camunda:historyTimeToLive="P30D">
+    <bpmn:startEvent id="startEvent_orderReceived" name="Order received" camunda:asyncBefore="true">
+      <bpmn:outgoing>flow_start</bpmn:outgoing>
+    </bpmn:startEvent>
+    <bpmn:sequenceFlow id="flow_start" sourceRef="startEvent_orderReceived" targetRef="serviceTask_checkCredit" />
+    <bpmn:serviceTask id="serviceTask_checkCredit" name="Check credit rating" camunda:type="external" camunda:topic="checkCreditRating">
       <bpmn:extensionElements>
         <camunda:inputOutput>
           <camunda:inputParameter name="customerId">${customer.id}</camunda:inputParameter>
@@ -11,42 +13,216 @@
           <camunda:outputParameter name="creditworthy">${score ge 600}</camunda:outputParameter>
         </camunda:inputOutput>
       </bpmn:extensionElements>
+      <bpmn:incoming>flow_start</bpmn:incoming>
+      <bpmn:outgoing>flow_toCredit</bpmn:outgoing>
     </bpmn:serviceTask>
-    <bpmn:sequenceFlow id="Flow_ToCredit" sourceRef="Task_CheckCredit" targetRef="Gateway_Credit" />
-    <bpmn:exclusiveGateway id="Gateway_Credit" name="Credit OK?" default="Flow_Rejected" />
-    <bpmn:sequenceFlow id="Flow_Approved" name="yes" sourceRef="Gateway_Credit" targetRef="Task_Ship">
+    <bpmn:sequenceFlow id="flow_toCredit" sourceRef="serviceTask_checkCredit" targetRef="gateway_credit" />
+    <bpmn:exclusiveGateway id="gateway_credit" name="Credit OK?" default="flow_rejected">
+      <bpmn:incoming>flow_toCredit</bpmn:incoming>
+      <bpmn:outgoing>flow_approved</bpmn:outgoing>
+      <bpmn:outgoing>flow_review</bpmn:outgoing>
+      <bpmn:outgoing>flow_rejected</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:sequenceFlow id="flow_approved" name="yes" sourceRef="gateway_credit" targetRef="gateway_orderApproved">
       <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${creditworthy &amp;&amp; orderTotal &lt;= 5000}</bpmn:conditionExpression>
     </bpmn:sequenceFlow>
-    <bpmn:sequenceFlow id="Flow_Review" name="large order" sourceRef="Gateway_Credit" targetRef="Task_Review">
+    <bpmn:sequenceFlow id="flow_review" name="large order" sourceRef="gateway_credit" targetRef="userTask_review">
       <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${creditworthy and orderTotal gt 5000}</bpmn:conditionExpression>
     </bpmn:sequenceFlow>
-    <bpmn:sequenceFlow id="Flow_Rejected" name="no" sourceRef="Gateway_Credit" targetRef="End_Rejected" />
-    <bpmn:userTask id="Task_Review" name="Review order" />
-    <bpmn:sequenceFlow id="Flow_ToApproved" sourceRef="Task_Review" targetRef="Gateway_Approved" />
-    <bpmn:exclusiveGateway id="Gateway_Approved" name="Approved?" />
-    <bpmn:sequenceFlow id="Flow_ReviewOk" name="yes" sourceRef="Gateway_Approved" targetRef="Task_Ship">
+    <bpmn:sequenceFlow id="flow_rejected" name="no" sourceRef="gateway_credit" targetRef="endEvent_rejected" />
+    <bpmn:userTask id="userTask_review" name="Review order" camunda:asyncAfter="true">
+      <bpmn:incoming>flow_review</bpmn:incoming>
+      <bpmn:outgoing>flow_toApproved</bpmn:outgoing>
+    </bpmn:userTask>
+    <bpmn:sequenceFlow id="flow_toApproved" sourceRef="userTask_review" targetRef="gateway_approved" />
+    <bpmn:exclusiveGateway id="gateway_approved" name="Approved?">
+      <bpmn:incoming>flow_toApproved</bpmn:incoming>
+      <bpmn:outgoing>flow_reviewOk</bpmn:outgoing>
+      <bpmn:outgoing>flow_reviewRejected</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:sequenceFlow id="flow_reviewOk" name="yes" sourceRef="gateway_approved" targetRef="gateway_orderApproved">
       <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${approved}</bpmn:conditionExpression>
     </bpmn:sequenceFlow>
-    <bpmn:sequenceFlow id="Flow_ReviewRejected" name="no" sourceRef="Gateway_Approved" targetRef="End_Rejected">
+    <bpmn:sequenceFlow id="flow_reviewRejected" name="no" sourceRef="gateway_approved" targetRef="endEvent_reviewRejected">
       <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${!approved}</bpmn:conditionExpression>
     </bpmn:sequenceFlow>
-    <bpmn:serviceTask id="Task_Ship" name="Ship order" />
-    <bpmn:sequenceFlow id="Flow_ToExtras" sourceRef="Task_Ship" targetRef="Gateway_Extras" />
-    <bpmn:inclusiveGateway id="Gateway_Extras" name="Extras?" default="Flow_NoExtras" />
-    <bpmn:sequenceFlow id="Flow_Insurance" name="insurance" sourceRef="Gateway_Extras" targetRef="Task_Insurance">
+    <bpmn:exclusiveGateway id="gateway_orderApproved">
+      <bpmn:incoming>flow_approved</bpmn:incoming>
+      <bpmn:incoming>flow_reviewOk</bpmn:incoming>
+      <bpmn:outgoing>flow_toShip</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:sequenceFlow id="flow_toShip" sourceRef="gateway_orderApproved" targetRef="serviceTask_ship" />
+    <bpmn:serviceTask id="serviceTask_ship" name="Ship order" camunda:type="external" camunda:topic="shipOrder">
+      <bpmn:incoming>flow_toShip</bpmn:incoming>
+      <bpmn:outgoing>flow_toExtras</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:sequenceFlow id="flow_toExtras" sourceRef="serviceTask_ship" targetRef="gateway_extras" />
+    <bpmn:inclusiveGateway id="gateway_extras" name="Extras?" default="flow_noExtras">
+      <bpmn:incoming>flow_toExtras</bpmn:incoming>
+      <bpmn:outgoing>flow_insurance</bpmn:outgoing>
+      <bpmn:outgoing>flow_accessories</bpmn:outgoing>
+      <bpmn:outgoing>flow_noExtras</bpmn:outgoing>
+    </bpmn:inclusiveGateway>
+    <bpmn:sequenceFlow id="flow_insurance" name="insurance" sourceRef="gateway_extras" targetRef="serviceTask_insurance">
       <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${insurance}</bpmn:conditionExpression>
     </bpmn:sequenceFlow>
-    <bpmn:sequenceFlow id="Flow_Accessories" name="accessories" sourceRef="Gateway_Extras" targetRef="Task_Accessories">
+    <bpmn:sequenceFlow id="flow_accessories" name="accessories" sourceRef="gateway_extras" targetRef="serviceTask_accessories">
       <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${not empty accessories}</bpmn:conditionExpression>
     </bpmn:sequenceFlow>
-    <bpmn:sequenceFlow id="Flow_NoExtras" sourceRef="Gateway_Extras" targetRef="Gateway_Join" />
-    <bpmn:serviceTask id="Task_Insurance" name="Add insurance" />
-    <bpmn:sequenceFlow id="Flow_InsuranceDone" sourceRef="Task_Insurance" targetRef="Gateway_Join" />
-    <bpmn:serviceTask id="Task_Accessories" name="Pack accessories" />
-    <bpmn:sequenceFlow id="Flow_AccessoriesDone" sourceRef="Task_Accessories" targetRef="Gateway_Join" />
-    <bpmn:inclusiveGateway id="Gateway_Join" />
-    <bpmn:sequenceFlow id="Flow_ToShipped" sourceRef="Gateway_Join" targetRef="End_Shipped" />
-    <bpmn:endEvent id="End_Shipped" name="Order shipped" />
-    <bpmn:endEvent id="End_Rejected" name="Order rejected" />
+    <bpmn:sequenceFlow id="flow_noExtras" name="none" sourceRef="gateway_extras" targetRef="gateway_join" />
+    <bpmn:serviceTask id="serviceTask_insurance" name="Add insurance" camunda:type="external" camunda:topic="addInsurance">
+      <bpmn:incoming>flow_insurance</bpmn:incoming>
+      <bpmn:outgoing>flow_insuranceDone</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:sequenceFlow id="flow_insuranceDone" sourceRef="serviceTask_insurance" targetRef="gateway_join" />
+    <bpmn:serviceTask id="serviceTask_accessories" name="Pack accessories" camunda:type="external" camunda:topic="packAccessories">
+      <bpmn:incoming>flow_accessories</bpmn:incoming>
+      <bpmn:outgoing>flow_accessoriesDone</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:sequenceFlow id="flow_accessoriesDone" sourceRef="serviceTask_accessories" targetRef="gateway_join" />
+    <bpmn:inclusiveGateway id="gateway_join" camunda:asyncBefore="true">
+      <bpmn:incoming>flow_noExtras</bpmn:incoming>
+      <bpmn:incoming>flow_insuranceDone</bpmn:incoming>
+      <bpmn:incoming>flow_accessoriesDone</bpmn:incoming>
+      <bpmn:outgoing>flow_toShipped</bpmn:outgoing>
+    </bpmn:inclusiveGateway>
+    <bpmn:sequenceFlow id="flow_toShipped" sourceRef="gateway_join" targetRef="endEvent_shipped" />
+    <bpmn:endEvent id="endEvent_shipped" name="Order shipped">
+      <bpmn:incoming>flow_toShipped</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:endEvent id="endEvent_rejected" name="Order rejected">
+      <bpmn:incoming>flow_rejected</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:endEvent id="endEvent_reviewRejected" name="Order rejected">
+      <bpmn:incoming>flow_reviewRejected</bpmn:incoming>
+    </bpmn:endEvent>
   </bpmn:process>
+  <bpmndi:BPMNDiagram id="BPMNDiagram_1">
+    <bpmndi:BPMNPlane id="BPMNPlane_1" bpmnElement="Process_Order">
+      <bpmndi:BPMNShape id="startEvent_orderReceived_di" bpmnElement="startEvent_orderReceived">
+        <dc:Bounds x="162" y="242" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="serviceTask_checkCredit_di" bpmnElement="serviceTask_checkCredit">
+        <dc:Bounds x="270" y="220" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gateway_credit_di" bpmnElement="gateway_credit" isMarkerVisible="true">
+        <dc:Bounds x="435" y="235" width="50" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="470" y="205" width="140" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="userTask_review_di" bpmnElement="userTask_review">
+        <dc:Bounds x="550" y="100" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gateway_approved_di" bpmnElement="gateway_approved" isMarkerVisible="true">
+        <dc:Bounds x="715" y="115" width="50" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="750" y="85" width="140" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="endEvent_reviewRejected_di" bpmnElement="endEvent_reviewRejected">
+        <dc:Bounds x="862" y="122" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="serviceTask_ship_di" bpmnElement="serviceTask_ship">
+        <dc:Bounds x="830" y="220" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gateway_extras_di" bpmnElement="gateway_extras">
+        <dc:Bounds x="995" y="235" width="50" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1030" y="205" width="140" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="serviceTask_insurance_di" bpmnElement="serviceTask_insurance">
+        <dc:Bounds x="1110" y="220" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="serviceTask_accessories_di" bpmnElement="serviceTask_accessories">
+        <dc:Bounds x="1110" y="340" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gateway_join_di" bpmnElement="gateway_join">
+        <dc:Bounds x="1275" y="235" width="50" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1310" y="205" width="140" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="endEvent_shipped_di" bpmnElement="endEvent_shipped">
+        <dc:Bounds x="1422" y="242" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="endEvent_rejected_di" bpmnElement="endEvent_rejected">
+        <dc:Bounds x="582" y="362" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gateway_orderApproved_di" bpmnElement="gateway_orderApproved" isMarkerVisible="true">
+        <dc:Bounds x="715" y="235" width="50" height="50" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="flow_start_di" bpmnElement="flow_start">
+        <di:waypoint x="198" y="260" />
+        <di:waypoint x="270" y="260" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="flow_toCredit_di" bpmnElement="flow_toCredit">
+        <di:waypoint x="370" y="260" />
+        <di:waypoint x="435" y="260" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="flow_approved_di" bpmnElement="flow_approved">
+        <di:waypoint x="485" y="260" />
+        <di:waypoint x="715" y="260" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="flow_review_di" bpmnElement="flow_review">
+        <di:waypoint x="460" y="235" />
+        <di:waypoint x="460" y="140" />
+        <di:waypoint x="550" y="140" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="flow_rejected_di" bpmnElement="flow_rejected">
+        <di:waypoint x="460" y="285" />
+        <di:waypoint x="460" y="380" />
+        <di:waypoint x="582" y="380" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="flow_toApproved_di" bpmnElement="flow_toApproved">
+        <di:waypoint x="650" y="140" />
+        <di:waypoint x="715" y="140" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="flow_reviewOk_di" bpmnElement="flow_reviewOk">
+        <di:waypoint x="740" y="165" />
+        <di:waypoint x="740" y="235" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="flow_reviewRejected_di" bpmnElement="flow_reviewRejected">
+        <di:waypoint x="765" y="140" />
+        <di:waypoint x="862" y="140" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="flow_toExtras_di" bpmnElement="flow_toExtras">
+        <di:waypoint x="930" y="260" />
+        <di:waypoint x="995" y="260" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="flow_insurance_di" bpmnElement="flow_insurance">
+        <di:waypoint x="1045" y="260" />
+        <di:waypoint x="1110" y="260" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="flow_accessories_di" bpmnElement="flow_accessories">
+        <di:waypoint x="1020" y="285" />
+        <di:waypoint x="1020" y="380" />
+        <di:waypoint x="1110" y="380" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="flow_noExtras_di" bpmnElement="flow_noExtras">
+        <di:waypoint x="1020" y="235" />
+        <di:waypoint x="1020" y="194" />
+        <di:waypoint x="1300" y="194" />
+        <di:waypoint x="1300" y="235" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="flow_insuranceDone_di" bpmnElement="flow_insuranceDone">
+        <di:waypoint x="1210" y="260" />
+        <di:waypoint x="1275" y="260" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="flow_accessoriesDone_di" bpmnElement="flow_accessoriesDone">
+        <di:waypoint x="1210" y="380" />
+        <di:waypoint x="1300" y="380" />
+        <di:waypoint x="1300" y="285" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="flow_toShipped_di" bpmnElement="flow_toShipped">
+        <di:waypoint x="1325" y="260" />
+        <di:waypoint x="1422" y="260" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="flow_toShip_di" bpmnElement="flow_toShip">
+        <di:waypoint x="765" y="260" />
+        <di:waypoint x="830" y="260" />
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
 </bpmn:definitions>

@@ -1,6 +1,9 @@
 {
   "$schema": "https://unpkg.com/knip@6/schema.json",
   "workspaces": {
+    ".": {
+      "ignoreDependencies": ["@miragon/bpmnlint-plugin-rules"]
+    },
     "packages/bpmn-js-data-simulation": {
       "ignore": ["test/consumer/fixture/**", "test/consumer/fixture-path-only/**"],
       "ignoreDependencies": ["bpmn-js"]

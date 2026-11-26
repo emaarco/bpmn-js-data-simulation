@@ -21,12 +21,17 @@
     "typecheck": "npm run typecheck --workspaces --if-present",
     "lint": "oxlint",
     "lint:deps": "npm run lint:deps -w @emaarco/bpmn-js-data-simulation",
+    "lint:bpmn": "npm run lint:bpmn:camunda7 && npm run lint:bpmn:zeebe",
+    "lint:bpmn:camunda7": "bpmnlint --max-warnings=0 --config .bpmnlintrc.camunda7.json \"packages/**/*camunda7.bpmn\"",
+    "lint:bpmn:zeebe": "bpmnlint --max-warnings=0 --config .bpmnlintrc.zeebe.json \"packages/**/*zeebe.bpmn\"",
     "knip": "knip",
     "knip:fix": "knip --fix",
     "format": "prettier --write .",
     "format:check": "prettier --check ."
   },
   "devDependencies": {
+    "@miragon/bpmnlint-plugin-rules": "0.24.0",
+    "bpmnlint": "12.2.0",
     "knip": "6.45.1",
     "oxlint": "1.93.0",
     "prettier": "3.10.1"

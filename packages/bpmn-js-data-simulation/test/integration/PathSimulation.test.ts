@@ -24,32 +24,32 @@ describe.each(fixtures)('path simulation with %s, without the token simulation',
 
     expect(path.taken).toEqual(
       expect.arrayContaining([
-        'Start',
-        'Flow_Approved',
-        'Task_Ship',
-        'Task_Insurance',
-        'Task_Accessories',
-        'End_Shipped',
+        'startEvent_orderReceived',
+        'flow_approved',
+        'serviceTask_ship',
+        'serviceTask_insurance',
+        'serviceTask_accessories',
+        'endEvent_shipped',
       ]),
     )
     expect(path.skipped).toEqual(
-      expect.arrayContaining(['Flow_Review', 'Task_Review', 'Flow_Rejected', 'End_Rejected', 'Flow_NoExtras']),
+      expect.arrayContaining(['flow_review', 'userTask_review', 'flow_rejected', 'endEvent_rejected', 'flow_noExtras']),
     )
-    expect(path.decisions.Gateway_Credit.takenFlowIds).toEqual(['Flow_Approved'])
-    expect(path.decisions.Gateway_Extras.takenFlowIds).toEqual(['Flow_Insurance', 'Flow_Accessories'])
-    expect(path.decisions).not.toHaveProperty('Gateway_Join')
+    expect(path.decisions.gateway_credit.takenFlowIds).toEqual(['flow_approved'])
+    expect(path.decisions.gateway_extras.takenFlowIds).toEqual(['flow_insurance', 'flow_accessories'])
+    expect(path.decisions).not.toHaveProperty('gateway_join')
   })
 
   it('marks the path and moves the marks when the variables change', async () => {
     const { pathSimulation, markers } = await harnessFor(fixture, engine)
 
     pathSimulation.simulate(smallOrder)
-    expect(markers('Task_Ship')).toEqual(['bds-path--taken'])
-    expect(markers('Task_Review')).toEqual(['bds-path--skipped'])
+    expect(markers('serviceTask_ship')).toEqual(['bds-path--taken'])
+    expect(markers('userTask_review')).toEqual(['bds-path--skipped'])
 
     pathSimulation.simulate(largeOrder)
-    expect(markers('Task_Review')).toEqual(['bds-path--taken'])
-    expect(markers('Task_Insurance')).toEqual(['bds-path--skipped'])
+    expect(markers('userTask_review')).toEqual(['bds-path--taken'])
+    expect(markers('serviceTask_insurance')).toEqual(['bds-path--skipped'])
   })
 
   it('exposes the configured engine', async () => {
@@ -65,9 +65,9 @@ describe('path simulation', () => {
 
     const path = pathSimulation.simulate({ creditworthy: true })
 
-    expect(path.decisions.Gateway_Credit.stuckReason).toMatch(/Condition of "yes" failed/)
-    expect(markers('Gateway_Credit')).toEqual(['bds-path--taken', 'bds-path--stuck'])
-    expect(markers('End_Rejected')).toEqual(['bds-path--skipped'])
+    expect(path.decisions.gateway_credit.stuckReason).toMatch(/Condition of "yes" failed/)
+    expect(markers('gateway_credit')).toEqual(['bds-path--taken', 'bds-path--stuck'])
+    expect(markers('endEvent_rejected')).toEqual(['bds-path--skipped'])
   })
 
   it('removes its marks on clear', async () => {
@@ -76,7 +76,9 @@ describe('path simulation', () => {
 
     pathSimulation.clear()
 
-    expect(['Start', 'Task_Ship', 'Task_Review', 'Flow_Review'].flatMap(markers)).toEqual([])
+    expect(['startEvent_orderReceived', 'serviceTask_ship', 'userTask_review', 'flow_review'].flatMap(markers)).toEqual(
+      [],
+    )
   })
 
   it('sums the measures of the elements on the path', async () => {
