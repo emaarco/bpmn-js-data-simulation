@@ -102,7 +102,7 @@ slider.addEventListener('input', () => {
 - **Result:** a `SimulatedPath`. `taken` and `skipped` list the ids of flow nodes and sequence flows, `decisions` holds the `RoutingDecision` of every gateway and activity that routes by its flows on the path, with `stuckReason` when it cannot decide (and `refusedByEngine` when the engine would reject the model). Nothing behind such a gateway is taken.
 - **Markers:** `bds-path--taken` and `bds-path--skipped` on every element (and its label), `bds-path--stuck` on a gateway that cannot decide. Skipped elements fade, taken ones are drawn in the accent colour; tune it with `--bds-path-taken` and `--bds-path-skipped-opacity`, or style the markers yourself. `clear()` removes them.
 - **Measures:** `simulate(variables, { measures: ['sim:duration'] })` sums numeric attributes of the elements on the path, e.g. a lead time, in `measures`. Declare the attribute's namespace in the diagram (`xmlns:sim="…"` and `<bpmn:task sim:duration="2">`); elements without it count as 0.
-- **Controls:** `deriveVariables(values)` lists every variable the evaluable conditions read as a `PathVariable`, so a host renders its sliders and switches from the diagram instead of hard-coding them. `type` follows the current value: `boolean`, `number`, `text` (a string, or no value yet) or `json` (lists and objects). A `number` carries a `range` for a slider: from 0 to twice the larger of the value and the numbers the conditions compare it with, rounded up to 1, 2 or 5 times a power of ten, in 100 steps.
+- **Controls:** `deriveVariables(values)` lists every variable the evaluable conditions read as a `PathVariable`, so a host renders its sliders and switches from the diagram instead of hard-coding them. `type` follows the current value: `boolean`, `number`, `text` (a string, or no value yet) or `json` (lists and objects). A `number` carries a `range` for a slider: from 0 to the larger of the value and twice the numbers the conditions compare it with, rounded up to 1, 2 or 5 times a power of ten, in 100 steps. A slider dragged to its end keeps its range when the host derives the variables again, so a host may derive them on every change. Set the bounds yourself with `deriveVariables(values, { ranges: { orderTotal: { min: 0, max: 8000 } } })`; `min`, `max` and `step` are each optional, and a missing `step` divides the range into 100.
 - **Values from a scenario:** `variablesOf(scenario, fallbacks)` gives the scenario's variables and task results after the output mappings of the diagram, e.g. a `creditworthy` computed from a task's `score`. Pass the other scenarios as `fallbacks` to fill in what the scenario lacks; the scenario wins. Without a scenario it returns what the fallbacks give.
 
 ```ts
@@ -138,7 +138,7 @@ const pathSimulation = modeler.get<PathSimulation>('pathSimulation')
 pathSimulation.simulate({ orderTotal: 9000 }) // what-if: the path for these variables, marked on the diagram
 pathSimulation.clear()
 pathSimulation.getEngine() // the engine adapter, shared with dataSimulation
-pathSimulation.deriveVariables({ orderTotal: 9000 }) // the variables the conditions read, typed for a control
+pathSimulation.deriveVariables({ orderTotal: 9000 }, { ranges: { orderTotal: { max: 20000 } } }) // the variables the conditions read, typed for a control
 pathSimulation.variablesOf(scenario, otherScenarios) // a scenario's variables after the output mappings
 ```
 

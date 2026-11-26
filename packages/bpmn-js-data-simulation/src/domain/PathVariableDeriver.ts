@@ -5,27 +5,38 @@ const RANGE_STEPS = 100
 const NUMBER_LITERAL = /(?<![\w.])\d+(?:\.\d+)?/g
 
 export class PathVariableDeriver {
-  derive(conditions: readonly ConditionReads[], values: Variables): PathVariable[] {
+  derive(
+    conditions: readonly ConditionReads[],
+    values: Variables,
+    rangeOverrides: Readonly<Record<string, Partial<NumberRange>>> = {},
+  ): PathVariable[] {
     const names = [...new Set(conditions.flatMap(condition => condition.variableNames))]
     return names.map(name => {
       const conditionsReadingName = conditions.filter(condition => condition.variableNames.includes(name))
-      return this.variableFor(name, values[name], conditionsReadingName)
+      return this.variableFor(name, values[name], conditionsReadingName, rangeOverrides[name] ?? {})
     })
   }
 
-  private variableFor(name: string, value: unknown, conditionsReadingName: ConditionReads[]): PathVariable {
+  private variableFor(
+    name: string,
+    value: unknown,
+    conditionsReadingName: ConditionReads[],
+    rangeOverride: Partial<NumberRange>,
+  ): PathVariable {
     if (typeof value === 'boolean') return { name, type: 'boolean' }
     if (typeof value === 'number') {
       const comparedNumbers = conditionsReadingName.flatMap(condition => this.numberLiterals(condition.expression))
-      return { name, type: 'number', range: this.rangeAround(value, comparedNumbers) }
+      return { name, type: 'number', range: this.rangeAround(value, comparedNumbers, rangeOverride) }
     }
     if (value === undefined || typeof value === 'string') return { name, type: 'text' }
     return { name, type: 'json' }
   }
 
-  private rangeAround(value: number, comparedNumbers: number[]): NumberRange {
-    const max = this.niceCeiling(2 * Math.max(Math.abs(value), ...comparedNumbers))
-    return { min: 0, max, step: max / RANGE_STEPS }
+  // The value itself is not doubled: a slider dragged to the end then keeps its range when derived again.
+  private rangeAround(value: number, comparedNumbers: number[], override: Partial<NumberRange>): NumberRange {
+    const min = override.min ?? 0
+    const max = override.max ?? this.niceCeiling(Math.max(Math.abs(value), 2 * Math.max(0, ...comparedNumbers)))
+    return { min, max, step: override.step ?? (max - min) / RANGE_STEPS }
   }
 
   private niceCeiling(value: number): number {
