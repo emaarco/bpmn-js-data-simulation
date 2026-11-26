@@ -1,6 +1,6 @@
 import type { OutgoingFlow } from '../domain/model.js'
 import type { EngineAdapter } from '../engines/types.js'
-import type { DiagramElement, Scope } from '../integration/tokenSimulation.js'
+import type { DiagramElement, ElementRegistry, Scope } from '../integration/tokenSimulation.js'
 
 export function findProcessInstance(scope: Scope): Scope {
   let current = scope
@@ -16,6 +16,10 @@ export function elementName(element: DiagramElement): string {
 export function is(element: DiagramElement, type: string): boolean {
   const businessObject = element.businessObject as { $instanceOf?: (type: string) => boolean }
   return typeof businessObject?.$instanceOf === 'function' && businessObject.$instanceOf(type)
+}
+
+export function flowNodesOf(elementRegistry: ElementRegistry): DiagramElement[] {
+  return elementRegistry.filter(element => element.id === element.businessObject.id && is(element, 'bpmn:FlowNode'))
 }
 
 export function isGateway(element: DiagramElement): boolean {

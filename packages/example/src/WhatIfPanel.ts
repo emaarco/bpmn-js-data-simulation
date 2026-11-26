@@ -1,6 +1,15 @@
-import { type SimulatedPath, type StartField, StartFieldCodec, type Variables } from '@emaarco/bpmn-js-data-simulation'
+import {
+  type PathVariable,
+  type SimulatedPath,
+  type StartField,
+  StartFieldCodec,
+  type Variables,
+} from '@emaarco/bpmn-js-data-simulation'
 import type { Editor } from './Editor'
-import { type ElementRegistry, type WhatIfField, WhatIfFields } from './WhatIfFields'
+
+interface ElementRegistry {
+  get(id: string): { businessObject: { name?: unknown } } | undefined
+}
 
 const NO_SCENARIO = ''
 
@@ -86,15 +95,13 @@ export class WhatIfPanel {
     const chosenId = this.chosenScenarioId ?? selectedScenarioId
     this.scenarioSelect.value = options.some(option => option.id === chosenId) ? chosenId! : options[0].id
     const scenario = scenarios.find(candidate => candidate.id === this.scenarioSelect.value)
-    this.values = this.fields().prefill(scenario, scenarios)
+    this.values = this.editor.pathSimulation.variablesOf(scenario, scenarios)
     this.render()
   }
 
   private render(): void {
     this.fieldList.replaceChildren(
-      ...this.fields()
-        .derive(this.values)
-        .map(field => this.renderField(field)),
+      ...this.editor.pathSimulation.deriveVariables(this.values).map(variable => this.renderField(variable)),
     )
     this.simulate()
   }
@@ -103,27 +110,28 @@ export class WhatIfPanel {
     this.showDecisions(this.editor.pathSimulation.simulate(this.values))
   }
 
-  private renderField(field: WhatIfField): HTMLElement {
+  private renderField(variable: PathVariable): HTMLElement {
     const row = document.createElement('label')
-    row.className = `app-whatif-field app-whatif-field--${field.control.kind}`
+    row.className = `app-whatif-field app-whatif-field--${variable.type}`
     const name = Object.assign(document.createElement('span'), {
       className: 'app-whatif-name',
-      textContent: field.name,
+      textContent: variable.name,
     })
-    row.append(name, ...this.inputsFor(field))
+    row.append(name, ...this.inputsFor(variable))
     return row
   }
 
-  private inputsFor(field: WhatIfField): HTMLInputElement[] {
-    const { control, name } = field
+  private inputsFor(variable: PathVariable): HTMLInputElement[] {
+    const { name } = variable
     const current = this.values[name]
-    if (control.kind === 'boolean') {
+    if (variable.type === 'boolean') {
       const toggle = this.input(name, { type: 'checkbox', role: 'switch', checked: current === true })
       toggle.addEventListener('change', () => this.update(name, toggle.checked))
       return [toggle]
     }
-    if (control.kind === 'number') {
-      const range = { min: String(control.min), max: String(control.max), step: String(control.step) }
+    if (variable.type === 'number') {
+      const { min, max, step } = variable.range
+      const range = { min: String(min), max: String(max), step: String(step) }
       const slider = this.input(`${name}-slider`, { type: 'range', ...range, value: String(current) })
       const exact = this.input(name, { type: 'number', step: 'any', value: String(current) })
       slider.addEventListener('input', () => {
@@ -137,7 +145,7 @@ export class WhatIfPanel {
       })
       return [exact, slider]
     }
-    const startField: StartField = { name, type: control.kind === 'json' ? 'json' : 'auto', usedBy: [] }
+    const startField: StartField = { name, type: variable.type === 'json' ? 'json' : 'auto', usedBy: [] }
     const text = this.input(name, { type: 'text', value: String(this.codec.format(startField, current)) })
     text.addEventListener('input', () => {
       const parsed = this.codec.parse(startField, text.value)
@@ -180,10 +188,6 @@ export class WhatIfPanel {
         return item
       }),
     )
-  }
-
-  private fields(): WhatIfFields {
-    return new WhatIfFields(this.elementRegistry(), this.editor.pathSimulation.getEngine())
   }
 
   private elementRegistry(): ElementRegistry {

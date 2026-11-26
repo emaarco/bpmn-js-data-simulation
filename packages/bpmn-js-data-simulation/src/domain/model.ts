@@ -86,3 +86,20 @@ export interface SimulatedPath {
   decisions: Record<string, RoutingDecision>
   measures: Record<string, number>
 }
+
+export interface ConditionReads {
+  expression: string
+  variableNames: string[]
+}
+
+export interface NumberRange {
+  min: number
+  max: number
+  step: number
+}
+
+export type PathVariable =
+  | { name: string; type: 'boolean' }
+  | { name: string; type: 'number'; range: NumberRange }
+  | { name: string; type: 'text' }
+  | { name: string; type: 'json' }

@@ -1,6 +1,6 @@
 import type { GatewayKind, PathGraph, PathNode } from '../domain/model.js'
 import type { EngineAdapter, ModdleElement } from '../engines/types.js'
-import { is, outgoingSequenceFlows, readOutgoingFlow } from '../utils/diagramElements.js'
+import { flowNodesOf, is, outgoingSequenceFlows, readOutgoingFlow } from '../utils/diagramElements.js'
 import type { DiagramElement, ElementRegistry } from './tokenSimulation.js'
 
 const GATEWAY_KINDS: Record<string, GatewayKind> = {
@@ -15,9 +15,7 @@ export class PathGraphReader {
   ) {}
 
   read(measureNames: readonly string[]): PathGraph {
-    const flowNodes = this.elementRegistry.filter(
-      element => element.id === element.businessObject.id && is(element, 'bpmn:FlowNode'),
-    )
+    const flowNodes = flowNodesOf(this.elementRegistry)
     const startEventsIn = (container: ModdleElement) =>
       flowNodes.filter(node => is(node, 'bpmn:StartEvent') && node.businessObject.$parent === container)
     const processStartIds = flowNodes

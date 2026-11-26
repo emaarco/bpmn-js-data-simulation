@@ -1,8 +1,9 @@
 // @vitest-environment jsdom
 import { describe, expect, it } from 'vitest'
-import { camunda7Engine, zeebeEngine } from '../../src'
+import { camunda7Engine, ScenarioParser, zeebeEngine } from '../../src'
 import { readFixture } from '../engines/moddle'
 import { createPathSimulationHarness, type PathSimulationHarness } from './harness'
+import { orderScenarios } from './scenarios'
 
 const fixtures = [
   ['zeebe', 'order-zeebe.bpmn'],
@@ -11,6 +12,7 @@ const fixtures = [
 
 const smallOrder = { creditworthy: true, orderTotal: 1200, insurance: true, accessories: ['lock'] }
 const largeOrder = { creditworthy: true, orderTotal: 8900, insurance: false, accessories: [], approved: true }
+const scenarios = new ScenarioParser().parse(orderScenarios)
 
 function harnessFor(fixture: string, engine: 'zeebe' | 'camunda7'): Promise<PathSimulationHarness> {
   return createPathSimulationHarness(readFixture(fixture), engine)
@@ -50,6 +52,45 @@ describe.each(fixtures)('path simulation with %s, without the token simulation',
     pathSimulation.simulate(largeOrder)
     expect(markers('userTask_review')).toEqual(['bds-path--taken'])
     expect(markers('serviceTask_insurance')).toEqual(['bds-path--skipped'])
+  })
+
+  it('derives a variable for every variable the evaluable conditions read', async () => {
+    const { pathSimulation } = await harnessFor(fixture, engine)
+
+    const variables = pathSimulation.deriveVariables(smallOrder)
+
+    expect(variables).toEqual(
+      expect.arrayContaining([
+        { name: 'creditworthy', type: 'boolean' },
+        { name: 'orderTotal', type: 'number', range: { min: 0, max: 10000, step: 100 } },
+        { name: 'insurance', type: 'boolean' },
+        { name: 'accessories', type: 'json' },
+        { name: 'approved', type: 'text' },
+      ]),
+    )
+    expect(variables).toHaveLength(5)
+  })
+
+  it('takes the variables of a scenario after its output mappings', async () => {
+    const { pathSimulation } = await harnessFor(fixture, engine)
+    const [smallOrderScenario] = scenarios
+
+    expect(pathSimulation.variablesOf(smallOrderScenario)).toEqual({
+      ...smallOrderScenario.variables,
+      score: 720,
+      creditScore: 720,
+      creditworthy: true,
+    })
+  })
+
+  it('fills the variables a scenario lacks from the other scenarios, the scenario winning', async () => {
+    const { pathSimulation } = await harnessFor(fixture, engine)
+    const missingTotal = scenarios.find(scenario => scenario.id === 'missing-total')!
+
+    const variables = pathSimulation.variablesOf(missingTotal, scenarios)
+
+    expect(variables).toMatchObject({ customer: { id: 'C-4' }, orderTotal: 100, approved: true, creditworthy: true })
+    expect(pathSimulation.simulate(variables).taken).toContain('flow_approved')
   })
 
   it('exposes the configured engine', async () => {
