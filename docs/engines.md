@@ -20,6 +20,19 @@ Exclusive gateways take the first flow whose condition is true, inclusive gatewa
 
 A gateway with a condition the adapter cannot evaluate keeps the token simulation's click-to-choose behavior.
 
+## Conditional flows on activities
+
+An activity whose outgoing flows carry conditions (or that has a default flow) works as an implicit gateway in Camunda 7, and the simulation follows the engine:
+
+- every flow whose condition is true is taken, so two true conditions start two tokens
+- a flow without a condition is always taken
+- the default flow is taken only when nothing else is
+- if nothing can be taken, or a condition fails, the token waits at the activity, marked red, until you fix the variables and press ▶ on the activity; the mappings of the activity are not applied again
+
+Zeebe rejects a model with conditions on flows that leave an activity when it is deployed ("Conditional sequence flows are only supported at exclusive or inclusive gateway"). The token therefore stops at such an activity, and its card says so: the diagram does not suggest a path the engine never runs. A default flow on a Zeebe activity without conditions is ignored, as in Zeebe.
+
+An activity with a condition the adapter cannot evaluate, e.g. a script, keeps the token simulation's behavior and leaves through every flow.
+
 ## JUEL subset
 
 Supported: literals, variables, property access (`a.b`, `a['b']`, `list[0]`), comparison (`== != < > <= >=`, `eq ne lt gt le ge`), logic (`&& || !`, `and or not`), arithmetic (`+ - * / %`, `div mod`), `empty` and `?:`. Null values follow EL: a property of null is null, a comparison with null is false.
@@ -28,4 +41,4 @@ Not evaluated: method calls (`execution.getVariable(…)`) and script conditions
 
 ## Adding an engine
 
-An engine is one `EngineAdapter` (`src/engines/types.ts`): it reads the mappings and conditions from the moddle elements and evaluates expressions. Pass an adapter object (e.g. an instance of your own class) as `engine`, or add it to `src/engines/` (see [CONTRIBUTING.md](../CONTRIBUTING.md)).
+An engine is one `EngineAdapter` (`src/engines/types.ts`): it reads the mappings and conditions from the moddle elements and evaluates expressions. `activityConditionRefusal` is the reason an engine rejects conditional flows on activities; leave it out when the engine evaluates them. Pass an adapter object (e.g. an instance of your own class) as `engine`, or add it to `src/engines/` (see [CONTRIBUTING.md](../CONTRIBUTING.md)).

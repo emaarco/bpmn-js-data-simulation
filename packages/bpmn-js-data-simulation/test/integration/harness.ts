@@ -86,7 +86,10 @@ export async function createHarness(xml: string, engine: EngineId, scenarios?: u
       'config.dataSimulation': ['value', { engine, scenarios }],
     },
     SimulatorModule,
-    { ...DataSimulationModule, __init__: ['dataSimulation', 'dataSimulationOverlays', 'dataGatewayBehaviors'] },
+    {
+      ...DataSimulationModule,
+      __init__: ['dataSimulation', 'dataSimulationOverlays', 'dataGatewayBehaviors', 'dataActivityBehavior'],
+    },
   ] as any)
   injector.init()
 

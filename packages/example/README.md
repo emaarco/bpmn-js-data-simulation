@@ -23,6 +23,7 @@ During `dev`, Vite aliases `@emaarco/bpmn-js-data-simulation` straight to the si
   - **`bike-service.zeebe.bpmn`**: an output mapping that calculates the invoice in FEEL.
   - **`bike-order.camunda7.bpmn`**: the same order process with `camunda:inputOutput` and JUEL.
   - **`return-handling.camunda7.bpmn`**: a gateway with JavaScript conditions that falls back to the click.
+  - **`bike-repair.camunda7-conditional-flows.bpmn`**: conditions on the flows that leave a task next to the same logic with an inclusive gateway, so one scenario shows that both route alike. Models with such an implicit split end in `camunda7-conditional-flows.bpmn` and are linted with their own config, which drops `@miragon/rules/flow-target-alignment`.
 - Starting instances through the start dialog, prefilled from the scenarios.
 - **What-if** next to the menu: a control for every variable the conditions read (prefilled from a scenario) drives `pathSimulation.simulate()`, so the gateways decide and the path is marked on every change, without a token.
 - **[`path-simulation.html`](./path-simulation.html)**: a plain `NavigatedViewer` with only `PathSimulationModule`, the Bike Order example and an `orderTotal` slider. No token simulation is loaded; it is the reference integration for slides and docs pages.

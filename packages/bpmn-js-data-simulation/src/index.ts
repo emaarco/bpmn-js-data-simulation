@@ -8,6 +8,7 @@ export type {
   OutgoingFlow,
   PathVariable,
   RoutingDecision,
+  RoutingKind,
   Scenario,
   SimulatedPath,
   StartField,

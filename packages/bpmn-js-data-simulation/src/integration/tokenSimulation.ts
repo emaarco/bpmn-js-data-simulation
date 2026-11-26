@@ -26,6 +26,7 @@ export interface Scope {
   id: string
   element: DiagramElement
   parent: Scope | null
+  active: boolean
   failed: boolean
   canceled: boolean
   start(): Scope

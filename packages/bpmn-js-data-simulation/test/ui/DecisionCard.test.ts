@@ -54,6 +54,31 @@ describe('DecisionCard', () => {
     )
   })
 
+  it('tells how to continue an activity stuck at its conditional flows', () => {
+    const card = new DecisionCard(
+      entry({
+        gatewayKind: 'activity',
+        decision: { flows: [], takenFlowIds: [], stuckReason: 'No condition is true' },
+      }),
+    ).element
+
+    expect(card.querySelector('.bds-tag')?.textContent).toBe('conditional flows')
+    expect(card.querySelector('.bds-error')?.textContent).toBe(
+      'No condition is true. Change the variables in Process Data, then press ▶ on the activity.',
+    )
+  })
+
+  it('does not suggest other variables when the engine refuses the model', () => {
+    const card = new DecisionCard(
+      entry({
+        gatewayKind: 'activity',
+        decision: { flows: [], takenFlowIds: [], stuckReason: 'Only at gateways', refusedByEngine: true },
+      }),
+    ).element
+
+    expect(card.querySelector('.bds-error')?.textContent).toBe('Only at gateways.')
+  })
+
   it('closes a pinned card', () => {
     const onClose = vi.fn()
     new DecisionCard(entry(), onClose).element.querySelector<HTMLButtonElement>('.bds-decision-close')!.click()

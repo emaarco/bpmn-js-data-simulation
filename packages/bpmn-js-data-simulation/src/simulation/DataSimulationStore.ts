@@ -1,4 +1,4 @@
-import type { GatewayKind, RoutingDecision, Scenario, Variables } from '../domain/model.js'
+import type { RoutingDecision, RoutingKind, Scenario, Variables } from '../domain/model.js'
 
 export type InstanceStatus = 'running' | 'waiting' | 'completed'
 
@@ -32,7 +32,7 @@ export interface ConditionInput {
 
 export interface DecisionLogEntry extends LogEntryBase {
   kind: 'decision'
-  gatewayKind: GatewayKind
+  gatewayKind: RoutingKind
   chosenBy: 'data' | 'click'
   decision: RoutingDecision
   inputs: ConditionInput[]
@@ -139,6 +139,10 @@ export class DataSimulationStore {
 
   addWaiting(instanceId: string, waiting: WaitingGateway): void {
     this.updateInstance(instanceId, instance => ({ ...instance, waiting: [...instance.waiting, waiting] }))
+  }
+
+  isWaitingScope(scopeId: string): boolean {
+    return [...this.instances.values()].some(instance => instance.waiting.some(waiting => waiting.scopeId === scopeId))
   }
 
   removeWaiting(scopeId: string): void {

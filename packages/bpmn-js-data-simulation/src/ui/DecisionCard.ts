@@ -1,6 +1,13 @@
+import type { RoutingDecision, RoutingKind } from '../domain/model.js'
 import type { ConditionInput, DecisionLogEntry } from '../simulation/DataSimulationStore.js'
 import { formatValue, h } from '../utils/dom.js'
 import { OutcomeBadge } from './OutcomeBadge.js'
+
+const KIND_LABELS: Record<RoutingKind, string> = {
+  exclusive: 'exclusive',
+  inclusive: 'inclusive',
+  activity: 'conditional flows',
+}
 
 export class DecisionCard {
   readonly element: HTMLElement
@@ -13,16 +20,14 @@ export class DecisionCard {
         'div',
         { className: 'bds-decision-title' },
         h('span', {}, elementName),
-        h('span', { className: 'bds-tag' }, chosenBy === 'click' ? `${gatewayKind} · by click` : gatewayKind),
+        h(
+          'span',
+          { className: 'bds-tag' },
+          chosenBy === 'click' ? `${KIND_LABELS[gatewayKind]} · by click` : KIND_LABELS[gatewayKind],
+        ),
         onClose ? this.closeButton(onClose) : null,
       ),
-      decision.stuckReason
-        ? h(
-            'p',
-            { className: 'bds-error' },
-            `${decision.stuckReason}. Change the variables in Process Data, then press ▶ on the gateway.`,
-          )
-        : null,
+      decision.stuckReason ? h('p', { className: 'bds-error' }, this.stuckMessage(decision, gatewayKind)) : null,
       h(
         'ul',
         { className: 'bds-flows' },
@@ -40,6 +45,12 @@ export class DecisionCard {
       ),
       inputs.length ? this.inputList(inputs) : null,
     )
+  }
+
+  private stuckMessage({ stuckReason, refusedByEngine }: RoutingDecision, kind: RoutingKind): string {
+    if (refusedByEngine) return `${stuckReason}.`
+    const element = kind === 'activity' ? 'activity' : 'gateway'
+    return `${stuckReason}. Change the variables in Process Data, then press ▶ on the ${element}.`
   }
 
   private closeButton(onClose: () => void): HTMLElement {

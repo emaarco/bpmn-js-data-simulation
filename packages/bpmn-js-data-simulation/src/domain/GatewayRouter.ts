@@ -1,16 +1,16 @@
-import type { Evaluation, FlowEvaluation, FlowOutcome, GatewayKind, OutgoingFlow, RoutingDecision } from './model.js'
+import type { Evaluation, FlowEvaluation, FlowOutcome, OutgoingFlow, RoutingDecision, RoutingKind } from './model.js'
 
 export type EvaluateCondition = (expression: string) => Evaluation
 
 export class GatewayRouter {
-  route(kind: GatewayKind, outgoing: OutgoingFlow[], evaluateCondition: EvaluateCondition): RoutingDecision {
+  route(kind: RoutingKind, outgoing: OutgoingFlow[], evaluateCondition: EvaluateCondition): RoutingDecision {
     const conditional = outgoing.filter(flow => !flow.isDefault)
     const defaultFlow = outgoing.find(flow => flow.isDefault)
     const evaluations: FlowEvaluation[] = []
 
     for (const flow of conditional) {
       const alreadyDecided = kind === 'exclusive' && evaluations.some(evaluation => this.isDecisive(evaluation))
-      evaluations.push(alreadyDecided ? { flow, outcome: 'skipped' } : this.evaluateFlow(flow, evaluateCondition))
+      evaluations.push(alreadyDecided ? { flow, outcome: 'skipped' } : this.evaluateFlow(kind, flow, evaluateCondition))
     }
 
     const failed = evaluations.find(evaluation => evaluation.outcome === 'error')
@@ -39,9 +39,20 @@ export class GatewayRouter {
     return this.stuck(evaluations, defaultFlow, 'No condition is true and there is no default flow')
   }
 
-  private evaluateFlow(flow: OutgoingFlow, evaluateCondition: EvaluateCondition): FlowEvaluation {
+  refuse(outgoing: OutgoingFlow[], reason: string): RoutingDecision {
+    return {
+      flows: outgoing.map(flow => ({ flow, outcome: 'skipped' })),
+      takenFlowIds: [],
+      stuckReason: reason,
+      refusedByEngine: true,
+    }
+  }
+
+  private evaluateFlow(kind: RoutingKind, flow: OutgoingFlow, evaluateCondition: EvaluateCondition): FlowEvaluation {
     if (flow.expression === undefined) {
-      return { flow, outcome: 'error', reason: 'Missing condition' }
+      return kind === 'activity'
+        ? { flow, outcome: 'taken', reason: 'No condition' }
+        : { flow, outcome: 'error', reason: 'Missing condition' }
     }
     const evaluation = evaluateCondition(flow.expression)
     if (!evaluation.ok) {

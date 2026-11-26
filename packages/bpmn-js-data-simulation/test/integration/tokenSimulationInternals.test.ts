@@ -23,6 +23,7 @@ describe('token simulation internals this add-on hooks into', () => {
   it.each([
     [SimulatorModule, 'exclusiveGatewayBehavior', ['exit']],
     [SimulatorModule, 'inclusiveGatewayBehavior', ['exit']],
+    [SimulatorModule, 'activityBehavior', ['exit']],
     [ExclusiveGatewaySettingsModule, 'exclusiveGatewaySettings', ['setSequenceFlow']],
     [InclusiveGatewaySettingsModule, 'inclusiveGatewaySettings', ['_setGatewayDefaults', 'toggleSequenceFlow']],
     [ContextPadsModule, 'contextPads', []],

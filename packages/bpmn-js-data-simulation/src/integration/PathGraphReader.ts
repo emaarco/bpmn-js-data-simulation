@@ -1,6 +1,6 @@
 import type { GatewayKind, PathGraph, PathNode } from '../domain/model.js'
 import type { EngineAdapter, ModdleElement } from '../engines/types.js'
-import { flowNodesOf, is, outgoingSequenceFlows, readOutgoingFlow } from '../utils/diagramElements.js'
+import { activityRouting, flowNodesOf, is, outgoingSequenceFlows, readOutgoingFlow } from '../utils/diagramElements.js'
 import type { DiagramElement, ElementRegistry } from './tokenSimulation.js'
 
 const GATEWAY_KINDS: Record<string, GatewayKind> = {
@@ -36,13 +36,26 @@ export class PathGraphReader {
     const entersSubProcess = is(node, 'bpmn:SubProcess') && !node.businessObject.triggeredByEvent
     return {
       id: node.id,
-      ...(GATEWAY_KINDS[node.type] ? { gatewayKind: GATEWAY_KINDS[node.type] } : {}),
+      ...this.routingOf(node),
       outgoing: outgoingSequenceFlows(node).map(flow => ({
         ...readOutgoingFlow(flow, this.engine),
         targetId: flow.target!.id,
       })),
       nestedStartIds: entersSubProcess ? startEventsIn(node.businessObject).map(start => start.id) : [],
       measures: Object.fromEntries(measureNames.map(name => [name, this.readMeasure(node.businessObject, name)])),
+    }
+  }
+
+  private routingOf(node: DiagramElement): Pick<PathNode, 'routingKind' | 'refusalReason'> {
+    const gatewayKind = GATEWAY_KINDS[node.type]
+    if (gatewayKind) return { routingKind: gatewayKind }
+    switch (activityRouting(node, this.engine)) {
+      case 'by-conditions':
+        return { routingKind: 'activity' }
+      case 'refused':
+        return { routingKind: 'activity', refusalReason: this.engine.activityConditionRefusal }
+      case 'none':
+        return {}
     }
   }
 

@@ -22,7 +22,7 @@ const approval: PathGraph = {
   nodes: [
     node('start', [flow('toGateway', 'gateway')]),
     node('gateway', [flow('yes', 'approve', 'small'), { ...flow('no', 'review'), isDefault: true }], {
-      gatewayKind: 'exclusive',
+      routingKind: 'exclusive',
     }),
     node('approve', [flow('toEnd', 'end')], { measures: { duration: 2 } }),
     node('review', [flow('reviewed', 'end')], { measures: { duration: 5 } }),
@@ -58,7 +58,7 @@ describe('PathResolver', () => {
       startIds: ['split'],
       nodes: [
         node('split', [flow('a', 'taskA', 'a'), flow('b', 'taskB', 'b'), flow('c', 'taskC', 'c')], {
-          gatewayKind: 'inclusive',
+          routingKind: 'inclusive',
         }),
         node('taskA'),
         node('taskB'),
@@ -79,6 +79,36 @@ describe('PathResolver', () => {
     }
 
     expect(resolver.resolve(graph, conditions({})).skipped).toEqual([])
+  })
+
+  it('routes an activity by the conditions on its flows, even with a single conditional flow', () => {
+    const graph: PathGraph = {
+      startIds: ['inspect'],
+      nodes: [node('inspect', [flow('worn', 'order', 'worn')], { routingKind: 'activity' }), node('order')],
+    }
+
+    expect(resolver.resolve(graph, conditions({ worn: true })).taken).toEqual(['inspect', 'worn', 'order'])
+    const stuck = resolver.resolve(graph, conditions({ worn: false }))
+    expect(stuck.taken).toEqual(['inspect'])
+    expect(stuck.decisions.inspect.stuckReason).toBe('No condition is true and there is no default flow')
+  })
+
+  it('stops at an activity whose conditional flows the engine refuses', () => {
+    const graph: PathGraph = {
+      startIds: ['inspect'],
+      nodes: [
+        node('inspect', [flow('worn', 'order', 'worn')], {
+          routingKind: 'activity',
+          refusalReason: 'Only at gateways',
+        }),
+        node('order'),
+      ],
+    }
+
+    const resolution = resolver.resolve(graph, conditions({ worn: true }))
+
+    expect(resolution.taken).toEqual(['inspect'])
+    expect(resolution.decisions.inspect).toMatchObject({ stuckReason: 'Only at gateways', refusedByEngine: true })
   })
 
   it('enters a sub-process at its start event', () => {
@@ -105,7 +135,7 @@ describe('PathResolver', () => {
       nodes: [
         node('task', [flow('toCheck', 'check')]),
         node('check', [flow('again', 'task', 'retry'), { ...flow('done', 'end'), isDefault: true }], {
-          gatewayKind: 'exclusive',
+          routingKind: 'exclusive',
         }),
         node('end'),
       ],

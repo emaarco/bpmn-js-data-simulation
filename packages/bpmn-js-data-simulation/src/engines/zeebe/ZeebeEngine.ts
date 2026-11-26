@@ -11,6 +11,8 @@ export class ZeebeEngine implements EngineAdapter {
   readonly label = 'Zeebe'
   readonly expressionLanguage = 'FEEL'
   readonly taskResultPropagation: TaskResultPropagation = 'without-output-mappings'
+  readonly activityConditionRefusal =
+    'Zeebe rejects this model on deploy: conditional sequence flows are only supported at exclusive or inclusive gateways'
 
   writeVariable(variables: Variables, target: string, value: unknown): Variables {
     return setVariable(variables, target, value)

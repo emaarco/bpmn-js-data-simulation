@@ -14,6 +14,7 @@ export interface EngineAdapter {
   label: string
   expressionLanguage: string
   taskResultPropagation: TaskResultPropagation
+  activityConditionRefusal?: string
   writeVariable(variables: Variables, target: string, value: unknown): Variables
   readIoMappings(element: ModdleElement): { inputs: Mapping[]; outputs: Mapping[] }
   readCondition(sequenceFlow: ModdleElement): string | undefined

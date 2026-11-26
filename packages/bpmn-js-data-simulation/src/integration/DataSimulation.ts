@@ -116,7 +116,8 @@ export class DataSimulation {
   }
 
   private applyMappings(element: DiagramElement, scope: Scope): void {
-    if (!is(element, 'bpmn:FlowNode') || scope.failed || scope.canceled) return
+    const isRetry = this.store.isWaitingScope(scope.id)
+    if (!is(element, 'bpmn:FlowNode') || scope.failed || scope.canceled || isRetry) return
     const instanceId = findProcessInstance(scope).id
     if (this.store.hasInstance(instanceId)) this.ioMappings.apply(element, instanceId)
   }
