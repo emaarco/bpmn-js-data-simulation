@@ -4,7 +4,7 @@ import { GatewayDecisionView } from '../simulation/GatewayDecisionView.js'
 import { DecisionCard } from '../ui/DecisionCard.js'
 import { OutcomeBadge } from '../ui/OutcomeBadge.js'
 import { badgePosition } from '../utils/badgePosition.js'
-import { gatewayOf, isGateway } from '../utils/diagramElements.js'
+import { decidingElementOf, isGateway } from '../utils/diagramElements.js'
 import { placePopover } from '../utils/popoverPlacement.js'
 import { inShadow } from '../utils/shadow.js'
 import type { DataSimulation } from './DataSimulation.js'
@@ -17,7 +17,7 @@ const BADGE_DISTANCE = 38
 const BADGE_MIN_SCALE = 1
 
 interface Popover {
-  gateway: DiagramElement
+  element: DiagramElement
   card: HTMLElement
 }
 
@@ -25,9 +25,9 @@ export class DataSimulationOverlays {
   static $inject = ['eventBus', 'overlays', 'elementRegistry', 'canvas', 'dataSimulation']
 
   private snapshot: SimulationSnapshot
-  private hoveredGatewayId?: string
-  private readonly pinnedGatewayIds = new Set<string>()
-  private markedGateways: DiagramElement[] = []
+  private hoveredElementId?: string
+  private readonly pinnedElementIds = new Set<string>()
+  private markedElements: DiagramElement[] = []
   private popovers: Popover[] = []
   private readonly popoverLayer = inShadow()
   private renderedState = ''
@@ -45,12 +45,12 @@ export class DataSimulationOverlays {
       this.render()
     })
     eventBus.on('element.hover', ({ element }: { element: DiagramElement }) => {
-      this.hoveredGatewayId = gatewayOf(element)
+      this.hoveredElementId = decidingElementOf(element)
       this.render()
     })
     eventBus.on('element.click', ({ element }: { element: DiagramElement }) => {
-      if (!isGateway(element)) return
-      if (!this.pinnedGatewayIds.delete(element.id)) this.pinnedGatewayIds.add(element.id)
+      if (!isGateway(element) && !this.hasDecision(element)) return
+      if (!this.pinnedElementIds.delete(element.id)) this.pinnedElementIds.add(element.id)
       this.render()
     })
     eventBus.on(['canvas.viewbox.changed', 'canvas.resized'], () => this.placePopovers())
@@ -64,37 +64,41 @@ export class DataSimulationOverlays {
   private render(): void {
     const { decisions, shown } = new GatewayDecisionView(this.snapshot)
     const cards = shown.filter(
-      ({ elementId }) => elementId === this.hoveredGatewayId || this.pinnedGatewayIds.has(elementId),
+      ({ elementId }) => elementId === this.hoveredElementId || this.pinnedElementIds.has(elementId),
     )
 
     const state = JSON.stringify([
       decisions.map(entry => entry.id),
       shown.map(entry => entry.id),
-      cards.map(entry => [entry.id, this.pinnedGatewayIds.has(entry.elementId)]),
+      cards.map(entry => [entry.id, this.pinnedElementIds.has(entry.elementId)]),
     ])
     if (state === this.renderedState) return
     this.renderedState = state
 
     this.overlays.remove({ type: OUTCOME_OVERLAY })
-    this.unmarkGateways()
+    this.unmarkElements()
     for (const entry of decisions) this.showOutcomes(entry.decision)
-    for (const entry of shown) this.markGateway(entry)
+    for (const entry of shown) this.markElement(entry)
     this.showCards(cards)
   }
 
-  private markGateway({ elementId, decision }: DecisionLogEntry): void {
-    const gateway = this.elementRegistry.get(elementId)
-    if (!gateway) return
-    this.canvas.addMarker(gateway, decision.stuckReason ? STUCK_MARKER : DECIDED_MARKER)
-    this.markedGateways.push(gateway)
+  private hasDecision(element: DiagramElement): boolean {
+    return new GatewayDecisionView(this.snapshot).shown.some(({ elementId }) => elementId === element.id)
   }
 
-  private unmarkGateways(): void {
-    for (const gateway of this.markedGateways) {
-      this.canvas.removeMarker(gateway, DECIDED_MARKER)
-      this.canvas.removeMarker(gateway, STUCK_MARKER)
+  private markElement({ elementId, decision }: DecisionLogEntry): void {
+    const element = this.elementRegistry.get(elementId)
+    if (!element) return
+    this.canvas.addMarker(element, decision.stuckReason ? STUCK_MARKER : DECIDED_MARKER)
+    this.markedElements.push(element)
+  }
+
+  private unmarkElements(): void {
+    for (const element of this.markedElements) {
+      this.canvas.removeMarker(element, DECIDED_MARKER)
+      this.canvas.removeMarker(element, STUCK_MARKER)
     }
-    this.markedGateways = []
+    this.markedElements = []
   }
 
   private showOutcomes(decision: RoutingDecision): void {
@@ -113,16 +117,16 @@ export class DataSimulationOverlays {
 
   private showCards(entries: DecisionLogEntry[]): void {
     this.popovers = entries.flatMap(entry => {
-      const gateway = this.elementRegistry.get(entry.elementId)
-      if (!gateway) return []
+      const element = this.elementRegistry.get(entry.elementId)
+      if (!element) return []
       const close = () => {
-        this.pinnedGatewayIds.delete(entry.elementId)
+        this.pinnedElementIds.delete(entry.elementId)
         this.render()
       }
-      const card = new DecisionCard(entry, this.pinnedGatewayIds.has(entry.elementId) ? close : undefined).element
+      const card = new DecisionCard(entry, this.pinnedElementIds.has(entry.elementId) ? close : undefined).element
       card.classList.add('bds-popover')
       card.dataset.elementId = entry.elementId
-      return [{ gateway, card }]
+      return [{ element, card }]
     })
     this.popoverLayer.shadowRoot!.replaceChildren(...this.popovers.map(({ card }) => card))
     this.placePopovers()
@@ -131,10 +135,10 @@ export class DataSimulationOverlays {
   private placePopovers(): void {
     const container = this.canvas.getContainer()
     const bounds = { width: container.clientWidth, height: container.clientHeight }
-    for (const { gateway, card } of this.popovers) {
+    for (const { element, card } of this.popovers) {
       card.style.maxHeight = ''
       const { left, top, maxHeight, hidden } = placePopover(
-        this.canvas.getAbsoluteBBox(gateway),
+        this.canvas.getAbsoluteBBox(element),
         { width: card.offsetWidth, height: card.offsetHeight },
         bounds,
       )

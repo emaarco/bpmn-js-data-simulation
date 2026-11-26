@@ -86,3 +86,54 @@ describe('GatewayRouter (inclusive)', () => {
     expect(decision.stuckReason).toBe('Condition of "large" failed: boom')
   })
 })
+
+describe('GatewayRouter (conditional flows on an activity)', () => {
+  const unconditional: OutgoingFlow = { id: 'notify', isDefault: false }
+
+  it('takes every flow whose condition is true, like Camunda 7 leaving an activity', () => {
+    const decision = router.route('activity', flows, conditions({ small: yes, large: yes }))
+
+    expect(decision.takenFlowIds).toEqual(['small', 'large'])
+    expect(decision.flows.map(flow => flow.outcome)).toEqual(['taken', 'taken', 'not-taken'])
+  })
+
+  it('always takes a flow without a condition, so the default flow is not taken', () => {
+    const decision = router.route('activity', [unconditional, ...flows], conditions({ small: no, large: no }))
+
+    expect(decision.takenFlowIds).toEqual(['notify'])
+    expect(decision.flows[0]).toMatchObject({ outcome: 'taken', reason: 'No condition' })
+    expect(decision.flows[decision.flows.length - 1]).toMatchObject({ flow: { id: 'fallback' }, outcome: 'not-taken' })
+  })
+
+  it('takes the default flow when no condition is true', () => {
+    const decision = router.route('activity', flows, conditions({ small: no, large: no }))
+
+    expect(decision.takenFlowIds).toEqual(['fallback'])
+  })
+
+  it('gets stuck when no condition is true and there is no default flow', () => {
+    const decision = router.route('activity', flows.slice(0, 1), conditions({ small: no }))
+
+    expect(decision.stuckReason).toBe('No condition is true and there is no default flow')
+  })
+
+  it('gets stuck when a condition fails', () => {
+    const decision = router.route('activity', flows, conditions({ small: yes, large: { ok: false, reason: 'boom' } }))
+
+    expect(decision.takenFlowIds).toEqual([])
+    expect(decision.stuckReason).toBe('Condition of "large" failed: boom')
+  })
+})
+
+describe('GatewayRouter (refused by the engine)', () => {
+  it('takes no flow and keeps the reason', () => {
+    const decision = router.refuse(flows, 'Only at gateways')
+
+    expect(decision).toEqual({
+      flows: flows.map(flow => ({ flow, outcome: 'skipped' })),
+      takenFlowIds: [],
+      stuckReason: 'Only at gateways',
+      refusedByEngine: true,
+    })
+  })
+})

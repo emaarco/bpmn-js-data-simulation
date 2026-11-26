@@ -1,4 +1,5 @@
 import { DataSimulationStore } from '../simulation/DataSimulationStore.js'
+import { DataActivityBehavior } from './behaviors/DataActivityBehavior.js'
 import { DataContextPads } from './behaviors/DataContextPads.js'
 import { DataGatewayBehaviors } from './behaviors/DataGatewayBehaviors.js'
 import { DataGatewaySettings } from './behaviors/DataGatewaySettings.js'
@@ -28,6 +29,7 @@ export const DataSimulationModule: DataSimulationModuleDeclaration = {
     'dataSimulationPanel',
     'dataSimulationToggle',
     'dataGatewayBehaviors',
+    'dataActivityBehavior',
     'dataGatewaySettings',
     'dataContextPads',
   ],
@@ -39,6 +41,7 @@ export const DataSimulationModule: DataSimulationModuleDeclaration = {
   dataGateways: ['type', DataGateways],
   dataStartForm: ['type', DataStartForm],
   dataGatewayBehaviors: ['type', DataGatewayBehaviors],
+  dataActivityBehavior: ['type', DataActivityBehavior],
   dataGatewaySettings: ['type', DataGatewaySettings],
   dataContextPads: ['type', DataContextPads],
 }

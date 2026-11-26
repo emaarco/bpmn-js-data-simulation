@@ -1,7 +1,13 @@
-import type { FlowEvaluation, GatewayKind, OutgoingFlow, RoutingDecision } from '../domain/model.js'
+import type { FlowEvaluation, GatewayKind, OutgoingFlow, RoutingDecision, RoutingKind } from '../domain/model.js'
 import { GatewayRouter } from '../domain/GatewayRouter.js'
 import type { ConditionInput, DataSimulationStore } from '../simulation/DataSimulationStore.js'
-import { elementName, findProcessInstance, outgoingSequenceFlows, readOutgoingFlow } from '../utils/diagramElements.js'
+import {
+  activityRouting,
+  elementName,
+  findProcessInstance,
+  outgoingSequenceFlows,
+  readOutgoingFlow,
+} from '../utils/diagramElements.js'
 import type { DataSimulation } from './DataSimulation.js'
 import type { BehaviorContext, DiagramElement, Scope, Simulator } from './tokenSimulation.js'
 
@@ -28,6 +34,10 @@ export class DataGateways {
     )
   }
 
+  routesActivityByData(activity: DiagramElement): boolean {
+    return this.dataSimulation.isEnabled() && activityRouting(activity, this.dataSimulation.getEngine()) !== 'none'
+  }
+
   exit(context: BehaviorContext, kind: GatewayKind): void {
     const { element: gateway, scope } = context
     const decision = this.decide(gateway, scope, kind)
@@ -35,10 +45,19 @@ export class DataGateways {
       this.waitForRetry(gateway, scope)
       return
     }
-    for (const flowId of decision.takenFlowIds) {
-      const flow = outgoingSequenceFlows(gateway).find(candidate => candidate.id === flowId)!
+    for (const flow of this.takenFlows(gateway, decision)) {
       this.simulator.enter({ element: flow, scope: scope.parent })
     }
+  }
+
+  exitActivity(context: BehaviorContext, leaveThrough: (flows: DiagramElement[]) => void): void {
+    const { element: activity, scope } = context
+    const decision = this.decide(activity, scope, 'activity')
+    if (decision.stuckReason) {
+      this.waitForRetry(activity, scope)
+      return
+    }
+    leaveThrough(this.takenFlows(activity, decision))
   }
 
   recordClickDecision(context: BehaviorContext, kind: GatewayKind): void {
@@ -60,21 +79,28 @@ export class DataGateways {
     this.record(gateway, scope, kind, 'click', decision, [])
   }
 
-  private decide(gateway: DiagramElement, scope: Scope, kind: GatewayKind): RoutingDecision {
+  private decide(element: DiagramElement, scope: Scope, kind: RoutingKind): RoutingDecision {
     const engine = this.dataSimulation.getEngine()
     const variables = this.dataSimulation.getVariables(scope)
-    const outgoing = this.outgoingFlows(gateway)
-    const decision = this.router.route(kind, outgoing, expression => engine.evaluate(expression, variables))
+    const outgoing = this.outgoingFlows(element)
+    const refusal = kind === 'activity' ? engine.activityConditionRefusal : undefined
+    const decision = refusal
+      ? this.router.refuse(outgoing, refusal)
+      : this.router.route(kind, outgoing, expression => engine.evaluate(expression, variables))
     const names = outgoing.flatMap(flow => (flow.expression ? engine.readVariableNames(flow.expression) : []))
     const inputs = [...new Set(names)].map(name => ({ name, value: structuredClone(variables[name]) }))
-    this.record(gateway, scope, kind, 'data', decision, inputs)
+    this.record(element, scope, kind, 'data', decision, inputs)
     return decision
   }
 
+  private takenFlows(element: DiagramElement, decision: RoutingDecision): DiagramElement[] {
+    return outgoingSequenceFlows(element).filter(flow => decision.takenFlowIds.includes(flow.id))
+  }
+
   private record(
-    gateway: DiagramElement,
+    element: DiagramElement,
     scope: Scope,
-    gatewayKind: GatewayKind,
+    gatewayKind: RoutingKind,
     chosenBy: 'data' | 'click',
     decision: RoutingDecision,
     inputs: ConditionInput[],
@@ -82,8 +108,8 @@ export class DataGateways {
     this.store.record({
       kind: 'decision',
       instanceId: findProcessInstance(scope).id,
-      elementId: gateway.id,
-      elementName: elementName(gateway),
+      elementId: element.id,
+      elementName: elementName(element),
       gatewayKind,
       chosenBy,
       decision,
@@ -91,25 +117,22 @@ export class DataGateways {
     })
   }
 
-  private waitForRetry(gateway: DiagramElement, scope: Scope): void {
-    const waitingScope = this.simulator
-      .createScope({ element: gateway, parent: scope.parent, initiator: scope })
-      .start()
+  private waitForRetry(element: DiagramElement, scope: Scope): void {
+    const waitingScope = this.simulator.createScope({ element, parent: scope.parent, initiator: scope }).start()
     this.store.addWaiting(findProcessInstance(scope).id, {
       scopeId: waitingScope.id,
-      gatewayId: gateway.id,
-      gatewayName: elementName(gateway),
+      gatewayId: element.id,
+      gatewayName: elementName(element),
     })
-    const retry = { element: gateway, type: 'continue', interrupting: false, boundary: false }
+    const retry = { element, type: 'continue', interrupting: false, boundary: false }
     const subscription = this.simulator.subscribe(waitingScope, retry, initiator => {
       subscription.remove()
-      this.store.removeWaiting(waitingScope.id)
-      this.simulator.exit({ element: gateway, scope: waitingScope, initiator })
+      this.simulator.exit({ element, scope: waitingScope, initiator })
     })
   }
 
-  private outgoingFlows(gateway: DiagramElement): OutgoingFlow[] {
+  private outgoingFlows(element: DiagramElement): OutgoingFlow[] {
     const engine = this.dataSimulation.getEngine()
-    return outgoingSequenceFlows(gateway).map(flow => readOutgoingFlow(flow, engine))
+    return outgoingSequenceFlows(element).map(flow => readOutgoingFlow(flow, engine))
   }
 }

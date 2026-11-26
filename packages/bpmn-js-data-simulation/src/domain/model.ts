@@ -9,6 +9,8 @@ export interface Mapping {
 
 export type GatewayKind = 'exclusive' | 'inclusive'
 
+export type RoutingKind = GatewayKind | 'activity'
+
 export interface OutgoingFlow {
   id: string
   name?: string
@@ -29,6 +31,7 @@ export interface RoutingDecision {
   flows: FlowEvaluation[]
   takenFlowIds: string[]
   stuckReason?: string
+  refusedByEngine?: boolean
 }
 
 export interface Scenario {
@@ -69,7 +72,8 @@ export interface PathFlow extends OutgoingFlow {
 
 export interface PathNode {
   id: string
-  gatewayKind?: GatewayKind
+  routingKind?: RoutingKind
+  refusalReason?: string
   outgoing: PathFlow[]
   nestedStartIds: string[]
   measures: Record<string, number>

@@ -54,18 +54,22 @@
   cursor: pointer;
 }
 
-.djs-element.bds-gateway--decided .djs-visual > polygon {
+.djs-element.bds-gateway--decided .djs-visual > polygon,
+.djs-element.bds-gateway--decided .djs-visual > rect:first-child {
   fill: var(--bds-gateway-decided-fill) !important;
   stroke: var(--bds-success) !important;
 }
 
-.djs-element.bds-gateway--stuck .djs-visual > polygon {
+.djs-element.bds-gateway--stuck .djs-visual > polygon,
+.djs-element.bds-gateway--stuck .djs-visual > rect:first-child {
   fill: var(--bds-gateway-stuck-fill) !important;
   stroke: var(--bds-danger) !important;
 }
 
 .djs-element.bds-gateway--decided.hover .djs-visual > polygon,
-.djs-element.bds-gateway--stuck.hover .djs-visual > polygon {
+.djs-element.bds-gateway--stuck.hover .djs-visual > polygon,
+.djs-element.bds-gateway--decided.hover .djs-visual > rect:first-child,
+.djs-element.bds-gateway--stuck.hover .djs-visual > rect:first-child {
   stroke-width: 3px !important;
 }
 

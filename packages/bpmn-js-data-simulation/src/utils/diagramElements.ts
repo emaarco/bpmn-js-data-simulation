@@ -1,5 +1,6 @@
 import type { OutgoingFlow } from '../domain/model.js'
 import type { EngineAdapter } from '../engines/types.js'
+import { readConditionExpression } from './moddle.js'
 import type { DiagramElement, ElementRegistry, Scope } from '../integration/tokenSimulation.js'
 
 export function findProcessInstance(scope: Scope): Scope {
@@ -26,10 +27,22 @@ export function isGateway(element: DiagramElement): boolean {
   return element.type === 'bpmn:ExclusiveGateway' || element.type === 'bpmn:InclusiveGateway'
 }
 
-export function gatewayOf(element: DiagramElement): string | undefined {
-  if (isGateway(element)) return element.id
-  if (element.type === 'bpmn:SequenceFlow' && element.source && isGateway(element.source)) return element.source.id
-  return undefined
+export function decidingElementOf(element: DiagramElement): string | undefined {
+  return element.type === 'bpmn:SequenceFlow' ? element.source?.id : element.id
+}
+
+export type ActivityRouting = 'none' | 'by-conditions' | 'refused'
+
+export function activityRouting(activity: DiagramElement, engine: EngineAdapter): ActivityRouting {
+  if (!is(activity, 'bpmn:Activity')) return 'none'
+  const conditional = outgoingSequenceFlows(activity).filter(flow => readConditionExpression(flow.businessObject))
+  if (engine.activityConditionRefusal) return conditional.length ? 'refused' : 'none'
+  if (!conditional.length && !activity.businessObject.default) return 'none'
+  const evaluable = conditional.every(flow => {
+    const expression = engine.readCondition(flow.businessObject)
+    return expression !== undefined && engine.canEvaluate(expression)
+  })
+  return evaluable ? 'by-conditions' : 'none'
 }
 
 export function outgoingSequenceFlows(element: DiagramElement): DiagramElement[] {

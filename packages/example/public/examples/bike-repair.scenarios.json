@@ -1,0 +1,44 @@
+{
+  "scenarios": [
+    {
+      "id": "brakes-worn",
+      "name": "Brakes worn",
+      "description": "Start both pools: the flow conditions on \"Inspect bike\" route exactly like the inclusive gateway below.",
+      "variables": { "bikeId": "B-1007" },
+      "taskResults": {
+        "userTask_inspectBike": { "brakesWorn": true, "tiresWorn": false },
+        "userTask_inspectBikeWithGateway": { "brakesWorn": true, "tiresWorn": false }
+      }
+    },
+    {
+      "id": "brakes-and-tires-worn",
+      "name": "Brakes and tires worn",
+      "description": "Two conditions are true, so the task starts two tokens, like an inclusive gateway would.",
+      "variables": { "bikeId": "B-1008" },
+      "taskResults": {
+        "userTask_inspectBike": { "brakesWorn": true, "tiresWorn": true },
+        "userTask_inspectBikeWithGateway": { "brakesWorn": true, "tiresWorn": true }
+      }
+    },
+    {
+      "id": "nothing-worn",
+      "name": "Nothing worn",
+      "description": "No condition is true: the default flow goes straight to the repair.",
+      "variables": { "bikeId": "B-1009" },
+      "taskResults": {
+        "userTask_inspectBike": { "brakesWorn": false, "tiresWorn": false },
+        "userTask_inspectBikeWithGateway": { "brakesWorn": false, "tiresWorn": false }
+      }
+    },
+    {
+      "id": "inspection-incomplete",
+      "name": "Inspection incomplete",
+      "description": "The inspection does not report tiresWorn. The condition fails and the token stays at the task, as Camunda 7 would refuse to leave it. Set tiresWorn in the instance variables to continue.",
+      "variables": { "bikeId": "B-1010" },
+      "taskResults": {
+        "userTask_inspectBike": { "brakesWorn": true },
+        "userTask_inspectBikeWithGateway": { "brakesWorn": true }
+      }
+    }
+  ]
+}

@@ -35,10 +35,17 @@ export class PathResolver {
     evaluateCondition: EvaluateCondition,
     decisions: Record<string, RoutingDecision>,
   ): PathFlow[] {
-    if (!node.gatewayKind || node.outgoing.length < 2) return node.outgoing
-    const decision = this.router.route(node.gatewayKind, node.outgoing, evaluateCondition)
+    if (!this.routesByData(node)) return node.outgoing
+    const decision = node.refusalReason
+      ? this.router.refuse(node.outgoing, node.refusalReason)
+      : this.router.route(node.routingKind!, node.outgoing, evaluateCondition)
     decisions[node.id] = decision
     return node.outgoing.filter(flow => decision.takenFlowIds.includes(flow.id))
+  }
+
+  private routesByData(node: PathNode): boolean {
+    if (node.routingKind === 'activity') return node.outgoing.length > 0
+    return node.routingKind !== undefined && node.outgoing.length > 1
   }
 
   private sumMeasures(nodes: PathNode[]): Record<string, number> {
