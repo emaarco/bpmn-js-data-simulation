@@ -1,0 +1,12 @@
+{
+  "extends": ["bpmnlint:recommended", "plugin:@miragon/rules/strict", "plugin:camunda-compat/camunda-cloud-8-11"],
+  "rules": {
+    "no-inclusive-gateway": "off",
+    "camunda-compat/user-task-definition": "off",
+    "@miragon/rules/label-placement": "error",
+    "@miragon/rules/text-annotation-fit": "error"
+  },
+  "moddleExtensions": {
+    "zeebe": "zeebe-bpmn-moddle/resources/zeebe.json"
+  }
+}

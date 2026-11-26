@@ -21,16 +21,20 @@ export async function selectExample(page: Page, value: string): Promise<void> {
   await expectReady(page)
 }
 
-export async function openStartDialog(page: Page, startEventId = 'Start'): Promise<void> {
+export async function openStartDialog(page: Page, startEventId = 'startEvent_orderReceived'): Promise<void> {
   await trigger(page, startEventId)
   await expect(page.locator('.bds-dialog')).toBeVisible()
 }
 
 export async function startInstance(
   page: Page,
-  { scenario, values = {} }: { scenario?: string; values?: Record<string, string> } = {},
+  {
+    scenario,
+    values = {},
+    startEventId,
+  }: { scenario?: string; values?: Record<string, string>; startEventId?: string } = {},
 ): Promise<void> {
-  await openStartDialog(page)
+  await openStartDialog(page, startEventId)
   if (scenario) await page.locator('.bds-dialog .bds-scenario-select').selectOption({ label: scenario })
   for (const [name, value] of Object.entries(values)) await page.locator(`.bds-dialog [name="${name}"]`).fill(value)
   await page.getByRole('button', { name: 'Start instance' }).click()

@@ -11,7 +11,7 @@ A scenario is a named set of start variables and mocked task results. Scenarios 
       "description": "Shown under the scenario picker.",
       "variables": { "orderTotal": 1290, "accessories": ["lock"] },
       "taskResults": {
-        "Task_CheckCredit": { "score": 720 }
+        "serviceTask_checkCredit": { "score": 720 }
       }
     }
   ]

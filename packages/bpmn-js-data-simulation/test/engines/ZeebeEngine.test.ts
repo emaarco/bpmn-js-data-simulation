@@ -7,7 +7,7 @@ const zeebeEngine = new ZeebeEngine()
 describe('ZeebeEngine', () => {
   it('reads zeebe:ioMapping inputs and outputs', async () => {
     const elements = await loadFlowElements('order-zeebe.bpmn', 'zeebe')
-    const task = elements.get('Task_CheckCredit')!
+    const task = elements.get('serviceTask_checkCredit')!
 
     expect(zeebeEngine.readIoMappings(task)).toEqual({
       inputs: [{ source: '=customer.id', target: 'customerId' }],
@@ -16,14 +16,14 @@ describe('ZeebeEngine', () => {
         { source: '=score >= 600', target: 'creditworthy' },
       ],
     })
-    expect(zeebeEngine.readIoMappings(elements.get('Task_Ship')!).outputs).toEqual([])
+    expect(zeebeEngine.readIoMappings(elements.get('serviceTask_ship')!).outputs).toEqual([])
   })
 
   it('reads sequence flow conditions', async () => {
     const elements = await loadFlowElements('order-zeebe.bpmn', 'zeebe')
 
-    expect(zeebeEngine.readCondition(elements.get('Flow_Approved')!)).toBe('=creditworthy and orderTotal <= 5000')
-    expect(zeebeEngine.readCondition(elements.get('Flow_Rejected')!)).toBeUndefined()
+    expect(zeebeEngine.readCondition(elements.get('flow_approved')!)).toBe('=creditworthy and orderTotal <= 5000')
+    expect(zeebeEngine.readCondition(elements.get('flow_rejected')!)).toBeUndefined()
   })
 
   it('evaluates FEEL expressions prefixed with "="', () => {

@@ -13,7 +13,7 @@ describe('ScenarioParser', () => {
           name: 'Premium customer',
           description: 'Large order',
           variables: { orderTotal: 2400 },
-          taskResults: { Task_CheckCredit: { score: 720 } },
+          taskResults: { serviceTask_checkCredit: { score: 720 } },
         },
       ],
     })
@@ -24,7 +24,7 @@ describe('ScenarioParser', () => {
         name: 'Premium customer',
         description: 'Large order',
         variables: { orderTotal: 2400 },
-        taskResults: { Task_CheckCredit: { score: 720 } },
+        taskResults: { serviceTask_checkCredit: { score: 720 } },
       },
     ])
   })

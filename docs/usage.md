@@ -91,7 +91,7 @@ slider.addEventListener('input', () => {
     orderTotal: slider.valueAsNumber,
     creditworthy: true,
   })
-  console.log(decisions.Gateway_Credit.takenFlowIds) // ['Flow_Review']
+  console.log(decisions.gateway_credit.takenFlowIds) // ['flow_review']
 })
 ```
 

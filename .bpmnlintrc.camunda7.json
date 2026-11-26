@@ -1,0 +1,11 @@
+{
+  "extends": ["bpmnlint:recommended", "plugin:@miragon/rules/strict", "plugin:camunda-compat/camunda-platform-7-24"],
+  "rules": {
+    "no-inclusive-gateway": "off",
+    "@miragon/rules/label-placement": "error",
+    "@miragon/rules/text-annotation-fit": "error"
+  },
+  "moddleExtensions": {
+    "camunda": "camunda-bpmn-moddle/resources/camunda.json"
+  }
+}

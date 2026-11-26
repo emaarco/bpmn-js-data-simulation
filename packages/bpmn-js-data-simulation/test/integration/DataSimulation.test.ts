@@ -20,13 +20,19 @@ const fixtures = [
 describe.each(fixtures)('data simulation with %s', (engine, fixture) => {
   it('runs a scenario: output mappings write variables and gateways follow the data', async () => {
     const harness = await harnessFor(fixture, engine, orderScenarios)
-    harness.trigger('Start')
+    harness.trigger('startEvent_orderReceived')
 
     expect(harness.entered).toEqual(
-      expect.arrayContaining(['Task_CheckCredit', 'Gateway_Credit', 'Task_Ship', 'Task_Insurance', 'Task_Accessories']),
+      expect.arrayContaining([
+        'serviceTask_checkCredit',
+        'gateway_credit',
+        'serviceTask_ship',
+        'serviceTask_insurance',
+        'serviceTask_accessories',
+      ]),
     )
-    expect(harness.entered).not.toContain('Task_Review')
-    expect(lastEntered(harness)).toBe('End_Shipped')
+    expect(harness.entered).not.toContain('userTask_review')
+    expect(lastEntered(harness)).toBe('endEvent_shipped')
 
     const [instance] = harness.dataSimulation.getSnapshot().instances
     expect(instance).toMatchObject({ processName: 'Order fulfilment', status: 'completed' })
@@ -41,7 +47,7 @@ describe.each(fixtures)('data simulation with %s', (engine, fixture) => {
     expect(instance.variables).not.toHaveProperty('customerId')
     expect(harness.dataSimulation.getSnapshot().log).toContainEqual(
       expect.objectContaining({
-        elementId: 'Gateway_Credit',
+        elementId: 'gateway_credit',
         inputs: [
           { name: 'creditworthy', value: true },
           { name: 'orderTotal', value: 1200 },
@@ -53,57 +59,57 @@ describe.each(fixtures)('data simulation with %s', (engine, fixture) => {
   it('merges task results into the process when the task has no output mappings', async () => {
     const harness = await harnessFor(fixture, engine, orderScenarios)
     harness.dataSimulation.selectScenario('large-order')
-    harness.trigger('Start')
+    harness.trigger('startEvent_orderReceived')
 
-    expect(harness.entered).toEqual(expect.arrayContaining(['Task_Review', 'Gateway_Approved', 'Task_Ship']))
-    expect(harness.entered).not.toContain('Task_Insurance')
-    expect(harness.entered).toContain('End_Shipped')
+    expect(harness.entered).toEqual(expect.arrayContaining(['userTask_review', 'gateway_approved', 'serviceTask_ship']))
+    expect(harness.entered).not.toContain('serviceTask_insurance')
+    expect(harness.entered).toContain('endEvent_shipped')
     expect(harness.dataSimulation.getSnapshot().instances[0].variables).toMatchObject({ approved: true })
   })
 
   it('takes the default flow when no condition is true', async () => {
     const harness = await harnessFor(fixture, engine, orderScenarios)
     harness.dataSimulation.selectScenario('bad-credit')
-    harness.trigger('Start')
+    harness.trigger('startEvent_orderReceived')
 
-    expect(lastEntered(harness)).toBe('End_Rejected')
+    expect(lastEntered(harness)).toBe('endEvent_rejected')
     const decision = harness.dataSimulation.getSnapshot().log[0] as DecisionLogEntry
-    expect(decision).toMatchObject({ kind: 'decision', elementId: 'Gateway_Credit', elementName: 'Credit OK?' })
+    expect(decision).toMatchObject({ kind: 'decision', elementId: 'gateway_credit', elementName: 'Credit OK?' })
     expect(decision.decision.flows.map(flow => [flow.flow.id, flow.outcome])).toEqual([
-      ['Flow_Approved', 'not-taken'],
-      ['Flow_Review', 'not-taken'],
-      ['Flow_Rejected', 'taken'],
+      ['flow_approved', 'not-taken'],
+      ['flow_review', 'not-taken'],
+      ['flow_rejected', 'taken'],
     ])
   })
 
   it('keeps the token at a gateway whose condition fails and continues after the data is fixed', async () => {
     const harness = await harnessFor(fixture, engine, orderScenarios)
     harness.dataSimulation.selectScenario('missing-total')
-    harness.trigger('Start')
+    harness.trigger('startEvent_orderReceived')
 
-    expect(harness.entered).not.toContain('End_Shipped')
-    expect(isMarkedStuck(harness, 'Gateway_Credit')).toBe(true)
+    expect(harness.entered).not.toContain('endEvent_shipped')
+    expect(isMarkedStuck(harness, 'gateway_credit')).toBe(true)
     const [instance] = harness.dataSimulation.getSnapshot().instances
-    expect(instance).toMatchObject({ status: 'waiting', waiting: [{ gatewayId: 'Gateway_Credit' }] })
+    expect(instance).toMatchObject({ status: 'waiting', waiting: [{ gatewayId: 'gateway_credit' }] })
 
     harness.dataSimulation.setInstanceVariables(instance.id, { ...instance.variables, orderTotal: 99 })
-    harness.trigger('Gateway_Credit')
+    harness.trigger('gateway_credit')
 
-    expect(lastEntered(harness)).toBe('End_Shipped')
+    expect(lastEntered(harness)).toBe('endEvent_shipped')
     expect(harness.dataSimulation.getSnapshot().instances[0].status).toBe('completed')
-    expect(isMarkedStuck(harness, 'Gateway_Credit')).toBe(false)
+    expect(isMarkedStuck(harness, 'gateway_credit')).toBe(false)
   })
 
   it('logs output mappings that cannot be evaluated', async () => {
     const harness = await harnessFor(fixture, engine, orderScenarios)
     harness.dataSimulation.selectScenario('no-credit-result')
-    harness.trigger('Start')
+    harness.trigger('startEvent_orderReceived')
 
     const issues = harness.dataSimulation
       .getSnapshot()
       .log.filter((entry): entry is MappingIssueLogEntry => entry.kind === 'mapping-issue')
     expect(issues.map(issue => issue.target)).toEqual(['creditScore', 'creditworthy'])
-    expect(harness.entered).not.toContain('End_Shipped')
+    expect(harness.entered).not.toContain('endEvent_shipped')
   })
 
   it('starts on demand from the edited start variables without a scenario', async () => {
@@ -115,26 +121,26 @@ describe.each(fixtures)('data simulation with %s', (engine, fixture) => {
       accessories: [],
       score: 900,
     })
-    harness.trigger('Start')
+    harness.trigger('startEvent_orderReceived')
 
-    expect(harness.entered).toContain('Task_Ship')
-    expect(lastEntered(harness)).toBe('End_Shipped')
+    expect(harness.entered).toContain('serviceTask_ship')
+    expect(lastEntered(harness)).toBe('endEvent_shipped')
   })
 
   it('takes task results from the scenario the instance was started with', async () => {
     const harness = await harnessFor(fixture, engine, orderScenarios)
-    harness.simulator.waitAtElement(harness.get('Task_CheckCredit'))
-    harness.trigger('Start')
+    harness.simulator.waitAtElement(harness.get('serviceTask_checkCredit'))
+    harness.trigger('startEvent_orderReceived')
     harness.dataSimulation.selectScenario('bad-credit')
-    harness.trigger('Task_CheckCredit')
+    harness.trigger('serviceTask_checkCredit')
 
     expect(harness.dataSimulation.getSnapshot().instances[0].variables).toMatchObject({ creditScore: 720 })
-    expect(lastEntered(harness)).toBe('End_Shipped')
+    expect(lastEntered(harness)).toBe('endEvent_shipped')
   })
 
   it('clears instances and the log on reset', async () => {
     const harness = await harnessFor(fixture, engine, orderScenarios)
-    harness.trigger('Start')
+    harness.trigger('startEvent_orderReceived')
     harness.eventBus.fire('tokenSimulation.resetSimulation')
 
     expect(harness.dataSimulation.getSnapshot()).toMatchObject({ instances: [], log: [] })
@@ -147,21 +153,21 @@ describe('task results next to output mappings', () => {
       {
         id: 'extra',
         variables: { customer: { id: 'C-1' }, orderTotal: 10, insurance: false, accessories: [] },
-        taskResults: { Task_CheckCredit: { score: 720, ratingAgency: 'Schufa' } },
+        taskResults: { serviceTask_checkCredit: { score: 720, ratingAgency: 'Schufa' } },
       },
     ],
   }
 
   it('Zeebe only keeps what the output mappings write', async () => {
     const harness = await harnessFor('order-zeebe.bpmn', 'zeebe', scenarios)
-    harness.trigger('Start')
+    harness.trigger('startEvent_orderReceived')
 
     expect(harness.dataSimulation.getSnapshot().instances[0].variables).not.toHaveProperty('ratingAgency')
   })
 
   it('Camunda 7 also propagates the completion variables', async () => {
     const harness = await harnessFor('order-camunda7.bpmn', 'camunda7', scenarios)
-    harness.trigger('Start')
+    harness.trigger('startEvent_orderReceived')
 
     expect(harness.dataSimulation.getSnapshot().instances[0].variables).toMatchObject({
       ratingAgency: 'Schufa',
@@ -176,7 +182,7 @@ describe('start fields', () => {
     const harness = await harnessFor('order-camunda7.bpmn', 'camunda7', orderScenarios)
     const startForm = harness.injector.get<DataStartForm>('dataStartForm')
     const fieldNames = (scenarioId: string | null) =>
-      startForm.fieldsFor(harness.get('Start'), scenarioId).map(field => field.name)
+      startForm.fieldsFor(harness.get('startEvent_orderReceived'), scenarioId).map(field => field.name)
 
     expect(fieldNames(null)).toContain('score')
     expect(fieldNames('small-order')).not.toContain('score')
@@ -187,30 +193,30 @@ describe('stuck gateways', () => {
   it('stay marked while an instance waits, even when another instance passes the gateway', async () => {
     const harness = await harnessFor('order-zeebe.bpmn', 'zeebe', orderScenarios)
     harness.dataSimulation.selectScenario('missing-total')
-    harness.trigger('Start')
+    harness.trigger('startEvent_orderReceived')
     harness.dataSimulation.selectScenario('small-order')
-    harness.trigger('Start')
+    harness.trigger('startEvent_orderReceived')
 
-    expect(harness.markers('Gateway_Credit')).toEqual(['bds-gateway--stuck'])
-    expect(harness.markers('Gateway_Extras')).toEqual(['bds-gateway--decided'])
+    expect(harness.markers('gateway_credit')).toEqual(['bds-gateway--stuck'])
+    expect(harness.markers('gateway_extras')).toEqual(['bds-gateway--decided'])
   })
 })
 
 describe('decision cards on hover and click', () => {
   it('show while a gateway or its flows are hovered and stay when the gateway is clicked', async () => {
     const harness = await harnessFor('order-zeebe.bpmn', 'zeebe', orderScenarios)
-    harness.trigger('Start')
-    const gateway = harness.get('Gateway_Credit')
+    harness.trigger('startEvent_orderReceived')
+    const gateway = harness.get('gateway_credit')
 
-    harness.eventBus.fire('element.hover', { element: harness.get('Task_Ship') })
+    harness.eventBus.fire('element.hover', { element: harness.get('serviceTask_ship') })
     expect(cardsShown(harness)).toEqual([])
 
-    harness.eventBus.fire('element.hover', { element: harness.get('Flow_Review') })
-    expect(cardsShown(harness)).toEqual(['Gateway_Credit'])
+    harness.eventBus.fire('element.hover', { element: harness.get('flow_review') })
+    expect(cardsShown(harness)).toEqual(['gateway_credit'])
 
     harness.eventBus.fire('element.click', { element: gateway })
-    harness.eventBus.fire('element.hover', { element: harness.get('Task_Ship') })
-    expect(cardsShown(harness)).toEqual(['Gateway_Credit'])
+    harness.eventBus.fire('element.hover', { element: harness.get('serviceTask_ship') })
+    expect(cardsShown(harness)).toEqual(['gateway_credit'])
 
     harness.eventBus.fire('element.click', { element: gateway })
     expect(cardsShown(harness)).toEqual([])
@@ -220,9 +226,9 @@ describe('decision cards on hover and click', () => {
 describe('flow badges', () => {
   it('show the decisions of the selected instance only', async () => {
     const harness = await harnessFor('order-zeebe.bpmn', 'zeebe', orderScenarios)
-    harness.trigger('Start')
+    harness.trigger('startEvent_orderReceived')
     harness.dataSimulation.selectScenario('bad-credit')
-    harness.trigger('Start')
+    harness.trigger('startEvent_orderReceived')
     const [first] = harness.dataSimulation.getSnapshot().instances
     harness.overlays.add.mockClear()
     harness.dataSimulation.selectInstance(first.id)
@@ -230,7 +236,7 @@ describe('flow badges', () => {
     const badgedFlows = harness.overlays.add.mock.calls
       .filter(([, type]) => type === 'bds-flow-outcome')
       .map(([element]) => (element as { id: string }).id)
-    expect(badgedFlows).toContain('Flow_Insurance')
+    expect(badgedFlows).toContain('flow_insurance')
   })
 })
 
@@ -240,11 +246,11 @@ describe('with the data simulation switched off', () => {
     const toggled = vi.fn()
     harness.eventBus.on('dataSimulation.toggle', toggled)
     harness.dataSimulation.setEnabled(false)
-    harness.simulator.setConfig(harness.get('Gateway_Credit'), { activeOutgoing: harness.get('Flow_Rejected') })
-    harness.trigger('Start')
+    harness.simulator.setConfig(harness.get('gateway_credit'), { activeOutgoing: harness.get('flow_rejected') })
+    harness.trigger('startEvent_orderReceived')
 
     expect(toggled.mock.calls[0][0]).toMatchObject({ enabled: false })
-    expect(lastEntered(harness)).toBe('End_Rejected')
+    expect(lastEntered(harness)).toBe('endEvent_rejected')
     expect(harness.dataSimulation.getSnapshot()).toMatchObject({ instances: [], log: [] })
   })
 })
@@ -256,14 +262,14 @@ describe('gateways the engine cannot evaluate', () => {
       '${execution.getVariable("creditworthy")}',
     )
     const harness = await createHarness(xml, 'camunda7', orderScenarios)
-    harness.simulator.setConfig(harness.get('Gateway_Credit'), { activeOutgoing: harness.get('Flow_Review') })
-    harness.trigger('Start')
+    harness.simulator.setConfig(harness.get('gateway_credit'), { activeOutgoing: harness.get('flow_review') })
+    harness.trigger('startEvent_orderReceived')
 
-    expect(harness.entered).toContain('Task_Review')
+    expect(harness.entered).toContain('userTask_review')
     expect(harness.dataSimulation.getSnapshot().log[0]).toMatchObject({
-      elementId: 'Gateway_Credit',
+      elementId: 'gateway_credit',
       chosenBy: 'click',
-      decision: { takenFlowIds: ['Flow_Review'] },
+      decision: { takenFlowIds: ['flow_review'] },
     })
   })
 })

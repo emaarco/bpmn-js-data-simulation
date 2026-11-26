@@ -8,7 +8,7 @@ const camunda7Engine = new Camunda7Engine()
 describe('Camunda7Engine', () => {
   it('reads camunda:inputOutput parameters', async () => {
     const elements = await loadFlowElements('order-camunda7.bpmn', 'camunda7')
-    const task = elements.get('Task_CheckCredit')!
+    const task = elements.get('serviceTask_checkCredit')!
 
     expect(camunda7Engine.readIoMappings(task)).toEqual({
       inputs: [{ source: '${customer.id}', target: 'customerId' }],
@@ -26,7 +26,7 @@ describe('Camunda7Engine', () => {
       conditionExpression: { $type: 'bpmn:FormalExpression', language: 'javascript', body: 'true' },
     } as ModdleElement
 
-    expect(camunda7Engine.readCondition(elements.get('Flow_Approved')!)).toBe('${creditworthy && orderTotal <= 5000}')
+    expect(camunda7Engine.readCondition(elements.get('flow_approved')!)).toBe('${creditworthy && orderTotal <= 5000}')
     expect(camunda7Engine.readCondition(scriptFlow)).toBeUndefined()
   })
 

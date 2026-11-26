@@ -35,6 +35,9 @@ jobs:
       - name: Lint
         run: npm run lint
 
+      - name: BPMN models (bpmnlint)
+        run: npm run lint:bpmn
+
       - name: Unused files/deps/exports (knip)
         run: npm run knip
 

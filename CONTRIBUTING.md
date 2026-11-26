@@ -24,6 +24,7 @@ npm test              # unit + integration tests (Vitest)
 npm run typecheck     # tsc --noEmit
 npm run lint          # oxlint
 npm run lint:deps     # dependency-cruiser architecture check
+npm run lint:bpmn     # bpmnlint on every BPMN model (Miragon strict preset)
 npm run knip          # unused files, exports and dependencies
 npm run format        # prettier
 npm run build         # build the library (Rollup → ESM + CJS + d.ts + CSS)
@@ -73,6 +74,7 @@ rehearse the publish. Install it with
 npm run typecheck
 npm run lint
 npm run lint:deps
+npm run lint:bpmn
 npm run knip
 npm test
 npm run build

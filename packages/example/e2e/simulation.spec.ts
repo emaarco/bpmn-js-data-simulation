@@ -62,14 +62,14 @@ test('switches back to the plain token simulation and on again', async ({ page }
   await dataToggle.click()
   await expect(dataToggle).toHaveAttribute('aria-pressed', 'false')
   await expect(page.getByRole('button', { name: 'Toggle Process Data' })).toBeHidden()
-  await expect(contextPad(page, 'Gateway_Credit', 'Set Sequence Flow')).toHaveCount(1)
-  await trigger(page, 'Start')
+  await expect(contextPad(page, 'gateway_credit', 'Set Sequence Flow')).toHaveCount(1)
+  await trigger(page, 'startEvent_orderReceived')
   await expect(page.locator('.bts-notification', { hasText: 'Process finished' }).first()).toBeVisible()
   await expect(page.locator('.bds-dialog')).toHaveCount(0)
   await expect(page.locator('.bds-gateway--decided')).toHaveCount(0)
 
   await dataToggle.click()
-  await expect(contextPad(page, 'Gateway_Credit', 'Set Sequence Flow')).toHaveCount(0)
+  await expect(contextPad(page, 'gateway_credit', 'Set Sequence Flow')).toHaveCount(0)
   await expect(page.getByRole('button', { name: 'Toggle Process Data' })).toBeVisible()
   await openStartDialog(page)
 })
@@ -79,11 +79,11 @@ test('keeps a stuck gateway card readable on a low, zoomed-out canvas', async ({
   await startInstance(page, { scenario: 'Order total missing' })
   await page.evaluate(() => {
     const editor = (window as unknown as { __editor: { modeler: { get(name: string): any } } }).__editor
-    const gateway = editor.modeler.get('elementRegistry').get('Gateway_Credit')
+    const gateway = editor.modeler.get('elementRegistry').get('gateway_credit')
     editor.modeler.get('canvas').zoom(0.5, { x: gateway.x, y: gateway.y })
   })
 
-  const card = await decision(page, 'Gateway_Credit')
+  const card = await decision(page, 'gateway_credit')
   await expect(card.locator('.bds-error')).toBeInViewport()
   expect((await card.boundingBox())?.width).toBe(300)
 })
@@ -125,8 +125,8 @@ test('runs a scenario: output mappings write variables, gateways follow the data
   await expect(page.locator('.bds-status--completed')).toBeVisible()
   await expect(variable(page, 'creditScore')).toContainText('720')
   await expect(variable(page, 'creditworthy')).toContainText('true')
-  await expect((await decision(page, 'Gateway_Credit')).locator('.bds-flow--taken')).toHaveText(/yes/)
-  await expect((await decision(page, 'Gateway_Extras')).locator('.bds-flow--taken')).toHaveCount(2)
+  await expect((await decision(page, 'gateway_credit')).locator('.bds-flow--taken')).toHaveText(/yes/)
+  await expect((await decision(page, 'gateway_extras')).locator('.bds-flow--taken')).toHaveCount(2)
   await expect(page.locator('.djs-overlay-bds-flow-outcome .bds-outcome--taken').first()).toBeVisible()
 })
 
@@ -134,44 +134,44 @@ test('takes the default flow when no condition is true', async ({ page }) => {
   await startInstance(page, { scenario: 'Bad credit' })
 
   await expect(page.locator('.bds-status--completed')).toBeVisible()
-  await expect((await decision(page, 'Gateway_Credit')).locator('.bds-flow--taken')).toHaveText(/no/)
+  await expect((await decision(page, 'gateway_credit')).locator('.bds-flow--taken')).toHaveText(/no/)
 })
 
 test('stops at a failing condition and continues after the instance variables are fixed', async ({ page }) => {
   await startInstance(page, { scenario: 'Order total missing' })
 
-  await expect(element(page, 'Gateway_Credit')).toHaveClass(/bds-gateway--stuck/)
-  await expect(decisionCard(page, 'Gateway_Credit')).toHaveCount(0)
-  await expect(await decision(page, 'Gateway_Credit')).toContainText("Variable 'orderTotal' not found")
-  await expect(decisionCard(page, 'Gateway_Credit').locator('.bds-decision-inputs')).toContainText('orderTotalnot set')
+  await expect(element(page, 'gateway_credit')).toHaveClass(/bds-gateway--stuck/)
+  await expect(decisionCard(page, 'gateway_credit')).toHaveCount(0)
+  await expect(await decision(page, 'gateway_credit')).toContainText("Variable 'orderTotal' not found")
+  await expect(decisionCard(page, 'gateway_credit').locator('.bds-decision-inputs')).toContainText('orderTotalnot set')
 
   await page.locator('.bds-instance').getByRole('button', { name: 'Edit' }).click()
   const editor = page.locator('.bds-instance-editor')
   const variables = JSON.parse(await editor.inputValue())
   await editor.fill(JSON.stringify({ ...variables, orderTotal: 450 }))
   await page.getByRole('button', { name: 'Apply' }).click()
-  await trigger(page, 'Gateway_Credit')
+  await trigger(page, 'gateway_credit')
 
   await expect(page.locator('.bds-status--completed')).toBeVisible()
   await expect(page.locator('.bds-gateway--stuck')).toHaveCount(0)
-  await expect(element(page, 'Gateway_Credit')).toHaveClass(/bds-gateway--decided/)
+  await expect(element(page, 'gateway_credit')).toHaveClass(/bds-gateway--decided/)
 })
 
 test('starts with values set on demand on top of a scenario', async ({ page }) => {
   await startInstance(page, { values: { orderTotal: '9000' } })
 
-  await expect((await decision(page, 'Gateway_Credit')).locator('.bds-flow--taken')).toHaveText(/large order/)
-  await expect(await decision(page, 'Gateway_Approved')).toContainText("Variable 'approved' not found")
+  await expect((await decision(page, 'gateway_credit')).locator('.bds-flow--taken')).toHaveText(/large order/)
+  await expect(await decision(page, 'gateway_approved')).toContainText("Variable 'approved' not found")
 })
 
 test('keeps a decision card open when its gateway is clicked', async ({ page }) => {
   await startInstance(page)
-  await element(page, 'Gateway_Credit').click()
-  await element(page, 'Task_Ship').hover()
+  await element(page, 'gateway_credit').click()
+  await element(page, 'serviceTask_ship').hover()
 
-  await expect(decisionCard(page, 'Gateway_Credit')).toContainText('orderTotal1290')
-  await decisionCard(page, 'Gateway_Credit').getByRole('button', { name: 'Close' }).click()
-  await expect(decisionCard(page, 'Gateway_Credit')).toHaveCount(0)
+  await expect(decisionCard(page, 'gateway_credit')).toContainText('orderTotal1290')
+  await decisionCard(page, 'gateway_credit').getByRole('button', { name: 'Close' }).click()
+  await expect(decisionCard(page, 'gateway_credit')).toHaveCount(0)
 })
 
 test('rejects invalid start variables', async ({ page }) => {
@@ -183,8 +183,8 @@ test('rejects invalid start variables', async ({ page }) => {
 })
 
 test('hides the click-to-choose pad on gateways driven by data', async ({ page }) => {
-  await expect(contextPad(page, 'Gateway_Credit', 'Set Sequence Flow')).toHaveCount(0)
-  await expect(contextPad(page, 'Gateway_Extras', 'Set Sequence Flow')).toHaveCount(0)
+  await expect(contextPad(page, 'gateway_credit', 'Set Sequence Flow')).toHaveCount(0)
+  await expect(contextPad(page, 'gateway_extras', 'Set Sequence Flow')).toHaveCount(0)
 })
 
 test('evaluates JUEL for Camunda 7', async ({ page }) => {
@@ -194,7 +194,7 @@ test('evaluates JUEL for Camunda 7', async ({ page }) => {
 
   await expect(page.locator('.bds-status--completed')).toBeVisible()
   await expect(variable(page, 'creditworthy')).toContainText('true')
-  await expect(await decision(page, 'Gateway_Credit')).toContainText('${creditworthy && orderTotal <= 5000}')
+  await expect(await decision(page, 'gateway_credit')).toContainText('${creditworthy && orderTotal <= 5000}')
 })
 
 test('runs Camunda 7 from scratch without a scenario', async ({ page }) => {
@@ -214,13 +214,13 @@ test('runs Camunda 7 from scratch without a scenario', async ({ page }) => {
 test('falls back to the click for conditions the engine cannot evaluate', async ({ page }) => {
   await selectExample(page, '/examples/return-handling.camunda7.bpmn')
 
-  await expect(contextPad(page, 'Gateway_Condition', 'Set Sequence Flow')).toHaveCount(1)
-  await expect(contextPad(page, 'Gateway_Window', 'Set Sequence Flow')).toHaveCount(0)
+  await expect(contextPad(page, 'gateway_condition', 'Set Sequence Flow')).toHaveCount(1)
+  await expect(contextPad(page, 'gateway_window', 'Set Sequence Flow')).toHaveCount(0)
 
-  await startInstance(page)
+  await startInstance(page, { startEventId: 'startEvent_returnRequested' })
   await expect(page.locator('.bds-status--completed')).toBeVisible()
-  await expect((await decision(page, 'Gateway_Window')).locator('.bds-tag').first()).toHaveText('exclusive')
-  await expect((await decision(page, 'Gateway_Condition')).locator('.bds-tag').first()).toHaveText(
+  await expect((await decision(page, 'gateway_window')).locator('.bds-tag').first()).toHaveText('exclusive')
+  await expect((await decision(page, 'gateway_condition')).locator('.bds-tag').first()).toHaveText(
     'exclusive · by click',
   )
 })
@@ -230,7 +230,7 @@ test('reopens the selected example after a reload', async ({ page }) => {
   await page.reload()
 
   await expectReady(page)
-  await openStartDialog(page)
+  await openStartDialog(page, 'startEvent_bikeDroppedOff')
   await expect(page.locator('.bds-dialog-header')).toContainText('Start “Bike service”')
 })
 
@@ -247,14 +247,14 @@ test('restores model and scenarios from a shared link', async ({ page, context }
   await page.goto(sharedUrl)
   await expect(page.getByTestId('status')).toHaveAttribute('data-state', 'ready')
   await page.locator('.bjs-container .bts-toggle-mode').click()
-  await openStartDialog(page)
+  await openStartDialog(page, 'startEvent_bikeDroppedOff')
   await expect(page.locator('.bds-dialog .bds-scenario-select')).toHaveValue('full-service')
 })
 
 test('keeps the start pads when switching between examples of the same engine', async ({ page }) => {
   await selectExample(page, '/examples/bike-service.zeebe.bpmn')
 
-  await expect(contextPad(page, 'Start', 'Trigger Event')).toBeVisible()
+  await expect(contextPad(page, 'startEvent_bikeDroppedOff', 'Trigger Event')).toBeVisible()
 })
 
 test('follows a newly started instance and shows only its badges', async ({ page }) => {
@@ -264,7 +264,7 @@ test('follows a newly started instance and shows only its badges', async ({ page
 
   await expect(page.locator('.bds-instance-select')).toHaveValue(/.+/)
   await expect(page.locator('.bds-instance-select option:checked')).toHaveText(/#2 Bad credit/)
-  await expect(page.locator('.djs-overlays[data-container-id="Flow_Insurance"] .bds-outcome')).toHaveCount(0)
+  await expect(page.locator('.djs-overlays[data-container-id="flow_insurance"] .bds-outcome')).toHaveCount(0)
 })
 
 test('opens a new diagram in edit mode with the properties panel', async ({ page }) => {
