@@ -1,4 +1,4 @@
-import type { ConditionReads, PathVariable, Scenario, SimulatedPath, Variables } from '../domain/model.js'
+import type { ConditionReads, NumberRange, PathVariable, Scenario, SimulatedPath, Variables } from '../domain/model.js'
 import { PathResolver } from '../domain/PathResolver.js'
 import { PathVariableDeriver } from '../domain/PathVariableDeriver.js'
 import { EngineRegistry } from '../engines/EngineRegistry.js'
@@ -13,6 +13,10 @@ export type PathSimulationConfig = Pick<DataSimulationConfig, 'engine'>
 
 export interface PathSimulationOptions {
   measures?: string[]
+}
+
+export interface DeriveVariablesOptions {
+  ranges?: Readonly<Record<string, Partial<NumberRange>>>
 }
 
 export class PathSimulation {
@@ -43,8 +47,8 @@ export class PathSimulation {
     return path
   }
 
-  deriveVariables(values: Variables): PathVariable[] {
-    return this.pathVariableDeriver.derive(this.evaluableConditions(), values)
+  deriveVariables(values: Variables, options: DeriveVariablesOptions = {}): PathVariable[] {
+    return this.pathVariableDeriver.derive(this.evaluableConditions(), values, options.ranges)
   }
 
   variablesOf(scenario: Scenario | undefined, fallbacks: readonly Scenario[] = []): Variables {

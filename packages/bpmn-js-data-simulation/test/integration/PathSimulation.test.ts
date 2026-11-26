@@ -71,6 +71,14 @@ describe.each(fixtures)('path simulation with %s, without the token simulation',
     expect(variables).toHaveLength(5)
   })
 
+  it('spans a number over the range the host sets for it', async () => {
+    const { pathSimulation } = await harnessFor(fixture, engine)
+
+    const variables = pathSimulation.deriveVariables(smallOrder, { ranges: { orderTotal: { max: 8000 } } })
+
+    expect(variables).toContainEqual({ name: 'orderTotal', type: 'number', range: { min: 0, max: 8000, step: 80 } })
+  })
+
   it('takes the variables of a scenario after its output mappings', async () => {
     const { pathSimulation } = await harnessFor(fixture, engine)
     const [smallOrderScenario] = scenarios

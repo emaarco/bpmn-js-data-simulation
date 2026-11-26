@@ -48,4 +48,9 @@ export {
   type DataSimulationModuleDeclaration,
   PathSimulationModule,
 } from './integration/index.js'
-export type { PathSimulation, PathSimulationConfig, PathSimulationOptions } from './integration/PathSimulation.js'
+export type {
+  DeriveVariablesOptions,
+  PathSimulation,
+  PathSimulationConfig,
+  PathSimulationOptions,
+} from './integration/PathSimulation.js'
