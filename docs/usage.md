@@ -66,7 +66,7 @@ Like the simulation log, Process Data has a button in the token simulation palet
 
 ## What-if
 
-`resolve(variables)` answers "which way does it go for this data?" without a token or an instance: the gateways decide right away and the path is marked on the diagram. Call it again on every change, e.g. from a slider:
+`resolve(variables)` answers "which way does it go for this data?" without a token or an instance: the gateways decide right away and the path is marked on the diagram. It needs the modules set up as above, token simulation included, but not simulation mode. Call it again on every change, e.g. from a slider:
 
 ```ts
 slider.addEventListener('input', () => {
