@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.0](https://github.com/emaarco/bpmn-js-data-simulation/compare/v0.4.0...v0.5.0) (2026-11-26)
+
+
+### Features
+
+* derive path variables and scenario values on the path simulation ([#35](https://github.com/emaarco/bpmn-js-data-simulation/issues/35)) ([79d895b](https://github.com/emaarco/bpmn-js-data-simulation/commit/79d895bb158893aa9d8c94cceb7a04b0955a36b5)), closes [#34](https://github.com/emaarco/bpmn-js-data-simulation/issues/34)
+
 ## [0.4.0](https://github.com/emaarco/bpmn-js-data-simulation/compare/v0.3.0...v0.4.0) (2026-11-26)
 
 
