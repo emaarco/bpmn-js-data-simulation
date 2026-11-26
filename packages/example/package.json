@@ -12,13 +12,13 @@
     "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
-    "@bpmn-io/properties-panel": "3.59.0",
+    "@bpmn-io/properties-panel": "3.60.2",
     "@emaarco/bpmn-js-data-simulation": "*",
     "@fontsource-variable/geist": "5.3.0",
     "@fontsource-variable/geist-mono": "5.3.0",
     "@playwright/test": "1.65.1",
-    "bpmn-js": "18.31.1",
-    "bpmn-js-properties-panel": "5.65.3",
+    "bpmn-js": "18.33.1",
+    "bpmn-js-properties-panel": "5.65.4",
     "bpmn-js-token-simulation": "1.1.0",
     "camunda-bpmn-js-behaviors": "1.18.0",
     "camunda-bpmn-moddle": "8.0.2",
