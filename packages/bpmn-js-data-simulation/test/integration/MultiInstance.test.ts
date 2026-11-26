@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 import { describe, expect, it, vi } from 'vitest'
+import type { DataStartForm } from '../../src/integration/DataStartForm'
 import type { DataSimulationStore } from '../../src/simulation/DataSimulationStore'
 import { type Harness, harnessFor } from './harness'
 
@@ -21,6 +22,19 @@ const fleetScenarios = {
 }
 
 describe.each(fixtures)('multi-instance activities with %s', (engine, fixture) => {
+  it('offers the collections as start variables', async () => {
+    const harness = await harnessFor(fixture, engine, fleetScenarios)
+    const startForm = harness.injector.get<DataStartForm>('dataStartForm')
+
+    const fields = startForm.fieldsFor(harness.get('startEvent_fleetOrderReceived'), 'four-bikes-two-sites')
+    expect(fields).toEqual(
+      expect.arrayContaining([
+        { name: 'bikes', type: 'json', usedBy: ['Assemble bike'] },
+        { name: 'sites', type: 'json', usedBy: ['Deliver to site'] },
+      ]),
+    )
+  })
+
   it('runs one instance per item of the collection', async () => {
     const harness = await harnessFor(fixture, engine, fleetScenarios)
     harness.trigger('startEvent_fleetOrderReceived')

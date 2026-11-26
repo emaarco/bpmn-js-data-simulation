@@ -27,8 +27,10 @@ export class VariableUsageCollector {
     }
     if (!is(element, 'bpmn:FlowNode')) return undefined
     const { inputs, outputs } = this.engine.readIoMappings(businessObject)
+    const loop = this.engine.readLoop?.(businessObject)
+    const readOnEnter = [loop?.cardinality, loop?.collection, ...inputs.map(mapping => mapping.source)]
     return this.usage(element, {
-      inputReads: inputs.flatMap(mapping => this.engine.readVariableNames(mapping.source)),
+      inputReads: readOnEnter.flatMap(expression => (expression ? this.engine.readVariableNames(expression) : [])),
       inputTargets: inputs.map(mapping => mapping.target),
       outputReads: outputs.flatMap(mapping => this.engine.readVariableNames(mapping.source)),
       outputTargets: outputs.map(mapping => mapping.target),
