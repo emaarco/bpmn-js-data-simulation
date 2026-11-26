@@ -19,6 +19,7 @@ Seeing the path a process takes for given data usually means deploying it. The t
 - **See why a path is taken:** gateways that decided turn green, and a card lists each condition, its result and the values it read.
 - **Show the path without running it:** `pathSimulation.simulate(variables)` marks the path the exclusive and inclusive gateways take, for example behind a slider, even in a plain viewer without the token simulation ([path simulation](docs/usage.md#path-simulation-what-if)).
 - **Start from a scenario:** the token simulation's ▶ opens a dialog prefilled from a [scenario file](docs/scenarios.md) that also mocks task results.
+- **Run multi-instance activities:** a parallel or sequential multi-instance task or sub-process runs one instance per item of its collection, with a dot per instance on the activity ([multi-instance](docs/scenarios.md#multi-instance-activities)).
 - **Fail visibly:** if no flow matches or a condition fails, the token stops at a red gateway, like an incident.
 - **Works in modelers and viewers:** one more module next to the token simulation.
 

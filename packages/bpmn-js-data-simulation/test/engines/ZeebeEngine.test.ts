@@ -19,6 +19,21 @@ describe('ZeebeEngine', () => {
     expect(zeebeEngine.readIoMappings(elements.get('serviceTask_ship')!).outputs).toEqual([])
   })
 
+  it('reads multi-instance loops with their input collection', async () => {
+    const elements = await loadFlowElements('fleet-zeebe.bpmn', 'zeebe')
+
+    expect(zeebeEngine.readLoop(elements.get('serviceTask_assembleBike')!)).toEqual({
+      mode: 'parallel',
+      cardinality: undefined,
+      collection: '=bikes',
+    })
+    expect(zeebeEngine.readLoop(elements.get('subProcess_deliverToSite')!)).toMatchObject({
+      mode: 'sequential',
+      collection: '=sites',
+    })
+    expect(zeebeEngine.readLoop(elements.get('serviceTask_sendInvoice')!)).toBeUndefined()
+  })
+
   it('reads sequence flow conditions', async () => {
     const elements = await loadFlowElements('order-zeebe.bpmn', 'zeebe')
 

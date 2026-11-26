@@ -1,6 +1,6 @@
 import { evaluate, parseExpression } from 'feelin'
-import type { Evaluation, Mapping, Variables } from '../../domain/model.js'
-import { findExtension, listProperty, readConditionExpression } from '../../utils/moddle.js'
+import type { Evaluation, Mapping, MultiInstanceLoop, Variables } from '../../domain/model.js'
+import { findExtension, listProperty, readConditionExpression, readMultiInstanceLoop } from '../../utils/moddle.js'
 import { setVariable } from '../../utils/variables.js'
 import type { EngineAdapter, ModdleElement, TaskResultPropagation } from '../types.js'
 
@@ -27,6 +27,14 @@ export class ZeebeEngine implements EngineAdapter {
 
   readCondition(sequenceFlow: ModdleElement): string | undefined {
     return readConditionExpression(sequenceFlow)?.body?.trim() || undefined
+  }
+
+  readLoop(activity: ModdleElement): MultiInstanceLoop | undefined {
+    const loop = readMultiInstanceLoop(activity)
+    if (!loop) return undefined
+    const inputCollection = findExtension(loop.characteristics, 'zeebe:LoopCharacteristics')?.inputCollection
+    const collection = typeof inputCollection === 'string' ? inputCollection.trim() || undefined : undefined
+    return { mode: loop.mode, cardinality: loop.cardinality, collection }
   }
 
   canEvaluate(expression: string): boolean {

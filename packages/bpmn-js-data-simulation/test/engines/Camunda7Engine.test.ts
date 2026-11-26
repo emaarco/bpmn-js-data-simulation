@@ -19,6 +19,29 @@ describe('Camunda7Engine', () => {
     })
   })
 
+  it('reads multi-instance loops with their collection and cardinality', async () => {
+    const elements = await loadFlowElements('fleet-camunda7.bpmn', 'camunda7')
+
+    expect(camunda7Engine.readLoop(elements.get('serviceTask_assembleBike')!)).toEqual({
+      mode: 'parallel',
+      cardinality: undefined,
+      collection: '${bikes}',
+    })
+    expect(camunda7Engine.readLoop(elements.get('serviceTask_testRide')!)).toEqual({
+      mode: 'sequential',
+      cardinality: '${2}',
+      collection: undefined,
+    })
+    expect(camunda7Engine.readLoop(elements.get('serviceTask_sendInvoice')!)).toBeUndefined()
+  })
+
+  it('reads a collection given as a variable name as an expression', async () => {
+    const elements = await loadFlowElements('fleet-camunda7.bpmn', 'camunda7')
+
+    expect(camunda7Engine.readLoop(elements.get('subProcess_deliverToSite')!)?.collection).toBe('${sites}')
+    expect(camunda7Engine.evaluate('${sites}', { sites: ['A', 'B'] })).toEqual({ ok: true, value: ['A', 'B'] })
+  })
+
   it('reads JUEL conditions and ignores script conditions', async () => {
     const elements = await loadFlowElements('order-camunda7.bpmn', 'camunda7')
     const scriptFlow = {

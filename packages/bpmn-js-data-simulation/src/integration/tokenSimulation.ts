@@ -5,6 +5,8 @@ export const RESET_SIMULATION_EVENT = 'tokenSimulation.resetSimulation'
 export const SCOPE_CREATE_EVENT = 'tokenSimulation.simulator.createScope'
 export const SCOPE_DESTROYED_EVENT = 'tokenSimulation.simulator.destroyScope'
 export const TRACE_EVENT = 'tokenSimulation.simulator.trace'
+export const ELEMENT_CHANGED_EVENT = 'tokenSimulation.simulator.elementChanged'
+export const TOKEN_COUNT_OVERLAY = 'bts-token-count'
 export const DATA_TOGGLE_EVENT = 'dataSimulation.toggle'
 
 export interface DiagramElement {
@@ -13,6 +15,8 @@ export interface DiagramElement {
   businessObject: ModdleElement
   outgoing?: DiagramElement[]
   waypoints?: Array<{ x: number; y: number }>
+  x?: number
+  y?: number
   width?: number
   height?: number
   parent?: DiagramElement
@@ -52,13 +56,32 @@ interface Subscription {
 export interface Simulator {
   createScope(context: { element: DiagramElement; parent: Scope | null; initiator?: Scope }): Scope
   subscribe(scope: Scope, event: SimulatorEvent, triggerFn: (initiator?: Scope) => unknown): Subscription
-  enter(context: { element: DiagramElement; scope: Scope | null; initiator?: Scope }): Scope
+  enter(context: { element: DiagramElement; scope: Scope | null; initiator?: Scope; loopIndex?: number }): Scope
   exit(context: BehaviorContext): void
   getConfig(element: DiagramElement): { activeOutgoing?: DiagramElement | DiagramElement[] }
 }
 
+export interface ActivityBehavior {
+  enter(context: BehaviorContext): void
+  exit(context: BehaviorContext): void
+}
+
+export interface ScopeBehavior {
+  tryExit(scope: Scope, initiator: Scope): void
+}
+
+interface AnimatedPath {
+  waypoints: Array<{ x: number; y: number }>
+}
+
+export interface Animation {
+  animate(connection: AnimatedPath, scope: Scope, done: () => void): void
+  createAnimation(connection: AnimatedPath, scope: Scope, done: () => void): { hide(): void } | undefined
+}
+
 export interface EventBus {
   on(event: string | string[], callback: (event: any) => unknown): void
+  on(event: string | string[], priority: number, callback: (event: any) => unknown): void
   fire(event: string, payload: object): void
 }
 

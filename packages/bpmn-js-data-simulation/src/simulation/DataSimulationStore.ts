@@ -1,4 +1,4 @@
-import type { RoutingDecision, RoutingKind, Scenario, Variables } from '../domain/model.js'
+import type { InstanceCount, LoopMode, RoutingDecision, RoutingKind, Scenario, Variables } from '../domain/model.js'
 
 export type InstanceStatus = 'running' | 'waiting' | 'completed'
 
@@ -44,9 +44,15 @@ export interface MappingIssueLogEntry extends LogEntryBase {
   reason: string
 }
 
-export type LogEntry = DecisionLogEntry | MappingIssueLogEntry
+export interface MultiInstanceLogEntry extends LogEntryBase {
+  kind: 'multi-instance'
+  mode: LoopMode
+  count: InstanceCount
+}
 
-type NewLogEntry = Omit<DecisionLogEntry, 'id'> | Omit<MappingIssueLogEntry, 'id'>
+export type LogEntry = DecisionLogEntry | MappingIssueLogEntry | MultiInstanceLogEntry
+
+type NewLogEntry = Omit<DecisionLogEntry, 'id'> | Omit<MappingIssueLogEntry, 'id'> | Omit<MultiInstanceLogEntry, 'id'>
 
 export interface SimulationSnapshot {
   engineLabel: string

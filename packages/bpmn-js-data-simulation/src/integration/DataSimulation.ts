@@ -4,7 +4,7 @@ import { EngineRegistry } from '../engines/EngineRegistry.js'
 import type { EngineAdapter, EngineId } from '../engines/types.js'
 import type { DataSimulationStore, SimulationListener, SimulationSnapshot } from '../simulation/DataSimulationStore.js'
 import type { StartFormRenderer } from '../ui/startForm.js'
-import { elementName, findProcessInstance, is } from '../utils/diagramElements.js'
+import { elementName, findProcessInstance, is, isLoopInstance } from '../utils/diagramElements.js'
 import { IoMappings } from './IoMappings.js'
 import {
   DATA_TOGGLE_EVENT,
@@ -117,7 +117,7 @@ export class DataSimulation {
 
   private applyMappings(element: DiagramElement, scope: Scope): void {
     const isRetry = this.store.isWaitingScope(scope.id)
-    if (!is(element, 'bpmn:FlowNode') || scope.failed || scope.canceled || isRetry) return
+    if (!is(element, 'bpmn:FlowNode') || isLoopInstance(scope) || scope.failed || scope.canceled || isRetry) return
     const instanceId = findProcessInstance(scope).id
     if (this.store.hasInstance(instanceId)) this.ioMappings.apply(element, instanceId)
   }

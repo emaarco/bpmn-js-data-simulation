@@ -5,6 +5,11 @@ declare module 'bpmn-moddle' {
   }
 }
 
+declare module 'bpmn-js-token-simulation/lib/animation' {
+  const AnimationModule: Record<string, unknown>
+  export default AnimationModule
+}
+
 declare module 'bpmn-js-token-simulation/lib/simulator' {
   const SimulatorModule: Record<string, unknown>
   export default SimulatorModule

@@ -1,3 +1,4 @@
+import AnimationModule from 'bpmn-js-token-simulation/lib/animation'
 import SimulatorModule from 'bpmn-js-token-simulation/lib/simulator'
 import ContextPadsModule from 'bpmn-js-token-simulation/lib/features/context-pads'
 import ContextPads from 'bpmn-js-token-simulation/lib/features/context-pads/ContextPads'
@@ -23,7 +24,10 @@ describe('token simulation internals this add-on hooks into', () => {
   it.each([
     [SimulatorModule, 'exclusiveGatewayBehavior', ['exit']],
     [SimulatorModule, 'inclusiveGatewayBehavior', ['exit']],
-    [SimulatorModule, 'activityBehavior', ['exit']],
+    [SimulatorModule, 'activityBehavior', ['enter', 'exit']],
+    [SimulatorModule, 'subProcessBehavior', ['enter', 'exit']],
+    [SimulatorModule, 'scopeBehavior', ['tryExit']],
+    [AnimationModule, 'animation', ['animate', 'createAnimation']],
     [ExclusiveGatewaySettingsModule, 'exclusiveGatewaySettings', ['setSequenceFlow']],
     [InclusiveGatewaySettingsModule, 'inclusiveGatewaySettings', ['_setGatewayDefaults', 'toggleSequenceFlow']],
     [ContextPadsModule, 'contextPads', []],
