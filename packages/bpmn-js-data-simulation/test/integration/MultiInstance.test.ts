@@ -87,6 +87,36 @@ describe.each(fixtures)('multi-instance activities with %s', (engine, fixture) =
     expect(countEntered(harness, 'userTask_loadVan')).toBe(3)
   })
 
+  it('logs how many instances ran and where the count comes from', async () => {
+    const harness = await harnessFor(fixture, engine, fleetScenarios)
+    harness.dataSimulation.selectScenario('sites-missing')
+    harness.trigger('startEvent_fleetOrderReceived')
+
+    const entries = harness.dataSimulation.getSnapshot().log.filter(entry => entry.kind === 'multi-instance')
+    expect(entries).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          elementId: 'serviceTask_assembleBike',
+          mode: 'parallel',
+          count: expect.objectContaining({ count: 1, source: 'collection' }),
+        }),
+        expect.objectContaining({
+          elementId: 'subProcess_deliverToSite',
+          mode: 'sequential',
+          count: expect.objectContaining({ count: 3, source: 'default', reason: expect.stringContaining('sites') }),
+        }),
+      ]),
+    )
+  })
+
+  it('shows the progress of the instances on the activity', async () => {
+    const harness = await harnessFor(fixture, engine, fleetScenarios)
+    harness.trigger('startEvent_fleetOrderReceived')
+
+    expect(progressOn(harness, 'serviceTask_assembleBike')).toBe('4/4')
+    expect(progressOn(harness, 'subProcess_deliverToSite')).toBe('2/2')
+  })
+
   it('applies the mappings and task result of the activity once, when the last instance is done', async () => {
     const harness = await harnessFor(fixture, engine, fleetScenarios)
     const store = harness.injector.get<DataSimulationStore>('dataSimulationStore')
@@ -107,6 +137,14 @@ describe('multi-instance loop cardinality', () => {
     expect(harness.entered[harness.entered.length - 1]).toBe('endEvent_fleetDelivered')
   })
 })
+
+function progressOn(harness: Harness, elementId: string): string | null | undefined {
+  const calls = harness.overlays.add.mock.calls as unknown as Array<[{ id: string }, string, { html: HTMLElement }]>
+  const [, , overlay] = calls
+    .filter(([element, type]) => element.id === elementId && type === 'bds-loop-progress')
+    .pop()!
+  return overlay.html.shadowRoot!.textContent
+}
 
 function countEntered(harness: Harness, elementId: string): number {
   return harness.entered.filter(id => id === elementId).length

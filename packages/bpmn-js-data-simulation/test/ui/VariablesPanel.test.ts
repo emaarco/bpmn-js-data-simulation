@@ -92,6 +92,33 @@ describe('VariablesPanel', () => {
     expect(query('.bds-issues').textContent).toContain('score: Variable not found')
   })
 
+  it('lists an instance count that fell back to the default, with its reason', () => {
+    const { panel, query } = createPanel()
+    const entry = (id: number, reason?: string) => ({
+      id,
+      kind: 'multi-instance' as const,
+      instanceId: 'i1',
+      elementId: 'Deliver',
+      elementName: 'Deliver to site',
+      mode: 'sequential' as const,
+      count: reason
+        ? { count: 3, source: 'default' as const, expression: '=sites', reason }
+        : { count: 2, source: 'collection' as const, expression: '=sites' },
+    })
+    panel.render(snapshot({ instances: [instance('i1')], selectedInstanceId: 'i1', log: [entry(1)] }))
+    expect(query<HTMLElement>('.bds-issues').hidden).toBe(true)
+
+    panel.render(
+      snapshot({
+        instances: [instance('i1')],
+        selectedInstanceId: 'i1',
+        log: [entry(2, "Variable 'sites' not found")],
+      }),
+    )
+    expect(query<HTMLElement>('.bds-issues').hidden).toBe(false)
+    expect(query('.bds-issues').textContent).toContain("Ran 3 instances by default: Variable 'sites' not found")
+  })
+
   it('shows the selected instance and lets the user pick another one', () => {
     const { panel, actions, query } = createPanel()
     panel.render(

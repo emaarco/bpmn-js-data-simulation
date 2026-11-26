@@ -1,5 +1,11 @@
 import type { Variables } from '../domain/model.js'
-import type { InstanceState, MappingIssueLogEntry, SimulationSnapshot } from '../simulation/DataSimulationStore.js'
+import type {
+  InstanceState,
+  LogEntry,
+  MappingIssueLogEntry,
+  MultiInstanceLogEntry,
+  SimulationSnapshot,
+} from '../simulation/DataSimulationStore.js'
 import { formatValue, h } from '../utils/dom.js'
 import { isVariables } from '../utils/variables.js'
 
@@ -182,15 +188,17 @@ export class VariablesPanel {
 
   private renderIssues({ log, selectedInstanceId }: SimulationSnapshot): void {
     const issues = log.filter(
-      (entry): entry is MappingIssueLogEntry =>
-        entry.kind === 'mapping-issue' && entry.instanceId === selectedInstanceId,
+      (entry): entry is MappingIssueLogEntry | MultiInstanceLogEntry =>
+        entry.instanceId === selectedInstanceId && this.isIssue(entry),
     )
     this.issueSection.hidden = !issues.length
     this.issueList.replaceChildren(
       ...issues
         .slice()
         .reverse()
-        .map(issue => this.renderMappingIssue(issue)),
+        .map(issue =>
+          issue.kind === 'mapping-issue' ? this.renderMappingIssue(issue) : this.renderInstanceCountIssue(issue),
+        ),
     )
   }
 
@@ -211,6 +219,19 @@ export class VariablesPanel {
       { className: 'bds-log-entry bds-log-entry--issue' },
       h('div', { className: 'bds-log-title' }, elementName, h('span', { className: 'bds-tag' }, 'mapping')),
       h('p', { className: 'bds-error' }, `${target}: ${reason}`),
+    )
+  }
+
+  private isIssue(entry: LogEntry): boolean {
+    return entry.kind === 'mapping-issue' || (entry.kind === 'multi-instance' && Boolean(entry.count.reason))
+  }
+
+  private renderInstanceCountIssue({ elementName, count }: MultiInstanceLogEntry): HTMLElement {
+    return h(
+      'li',
+      { className: 'bds-log-entry bds-log-entry--issue' },
+      h('div', { className: 'bds-log-title' }, elementName, h('span', { className: 'bds-tag' }, 'instances')),
+      h('p', { className: 'bds-error' }, `Ran ${count.count} instances by default: ${count.reason}`),
     )
   }
 

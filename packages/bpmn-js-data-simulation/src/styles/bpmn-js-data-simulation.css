@@ -41,7 +41,8 @@
   --bds-ease: cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.bjs-container.simulation .djs-overlays .djs-overlay.djs-overlay-bds-flow-outcome {
+.bjs-container.simulation .djs-overlays .djs-overlay.djs-overlay-bds-flow-outcome,
+.bjs-container.simulation .djs-overlays .djs-overlay.djs-overlay-bds-loop-progress {
   display: block !important;
 }
 

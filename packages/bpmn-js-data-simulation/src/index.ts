@@ -3,6 +3,7 @@ export type {
   FlowEvaluation,
   FlowOutcome,
   GatewayKind,
+  InstanceCount,
   LoopMode,
   Mapping,
   MultiInstanceLoop,
@@ -36,6 +37,7 @@ export type {
   InstanceStatus,
   LogEntry,
   MappingIssueLogEntry,
+  MultiInstanceLogEntry,
   SimulationListener,
   SimulationSnapshot,
 } from './simulation/DataSimulationStore.js'
