@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" xmlns:camunda="http://camunda.org/schema/1.0/bpmn" xmlns:modeler="http://camunda.org/schema/modeler/1.0" id="definitions_bikeRepair" targetNamespace="http://bpmn.io/schema/bpmn" modeler:executionPlatform="Camunda Platform" modeler:executionPlatformVersion="7.24.0">
+  <bpmn:process id="Process_Repair" name="Bike repair" isExecutable="true" camunda:historyTimeToLive="180">
+    <bpmn:startEvent id="startEvent_bikeHandedIn" name="Bike handed in" camunda:asyncBefore="true">
+      <bpmn:outgoing>flow_bikeHandedInToInspectBike</bpmn:outgoing>
+    </bpmn:startEvent>
+    <bpmn:userTask id="userTask_inspectBike" name="Inspect bike" default="flow_nothingWorn" camunda:assignee="workshop" camunda:asyncAfter="true" camunda:asyncBefore="true">
+      <bpmn:incoming>flow_bikeHandedInToInspectBike</bpmn:incoming>
+      <bpmn:outgoing>flow_brakesWorn</bpmn:outgoing>
+      <bpmn:outgoing>flow_tiresWorn</bpmn:outgoing>
+      <bpmn:outgoing>flow_nothingWorn</bpmn:outgoing>
+      <bpmn:multiInstanceLoopCharacteristics>
+        <bpmn:loopCardinality xsi:type="bpmn:tFormalExpression">${2}</bpmn:loopCardinality>
+      </bpmn:multiInstanceLoopCharacteristics>
+    </bpmn:userTask>
+    <bpmn:sequenceFlow id="flow_brakesWorn" name="brakes worn" sourceRef="userTask_inspectBike" targetRef="serviceTask_orderBrakePads">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${brakesWorn}</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="flow_tiresWorn" name="tires worn" sourceRef="userTask_inspectBike" targetRef="serviceTask_orderTires">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${tiresWorn}</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="flow_nothingWorn" name="nothing worn" sourceRef="userTask_inspectBike" targetRef="gateway_partsOrdered" />
+    <bpmn:sequenceFlow id="flow_bikeHandedInToInspectBike" sourceRef="startEvent_bikeHandedIn" targetRef="userTask_inspectBike" />
+    <bpmn:serviceTask id="serviceTask_orderBrakePads" name="Order brake pads" camunda:type="external" camunda:topic="orderBrakePads">
+      <bpmn:incoming>flow_brakesWorn</bpmn:incoming>
+      <bpmn:outgoing>flow_brakePadsOrdered</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:sequenceFlow id="flow_brakePadsOrdered" sourceRef="serviceTask_orderBrakePads" targetRef="gateway_partsOrdered" />
+    <bpmn:serviceTask id="serviceTask_orderTires" name="Order tires" camunda:type="external" camunda:topic="orderTires">
+      <bpmn:incoming>flow_tiresWorn</bpmn:incoming>
+      <bpmn:outgoing>flow_tiresOrdered</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:sequenceFlow id="flow_tiresOrdered" sourceRef="serviceTask_orderTires" targetRef="gateway_partsOrdered" />
+    <bpmn:inclusiveGateway id="gateway_partsOrdered" camunda:asyncBefore="true">
+      <bpmn:incoming>flow_nothingWorn</bpmn:incoming>
+      <bpmn:incoming>flow_brakePadsOrdered</bpmn:incoming>
+      <bpmn:incoming>flow_tiresOrdered</bpmn:incoming>
+      <bpmn:outgoing>flow_partsOrderedToBikeRepaired</bpmn:outgoing>
+    </bpmn:inclusiveGateway>
+    <bpmn:endEvent id="endEvent_bikeRepaired" name="Bike repaired">
+      <bpmn:incoming>flow_partsOrderedToBikeRepaired</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:sequenceFlow id="flow_partsOrderedToBikeRepaired" sourceRef="gateway_partsOrdered" targetRef="endEvent_bikeRepaired" />
+  </bpmn:process>
+  <bpmndi:BPMNDiagram id="BPMNDiagram_Process_Repair">
+    <bpmndi:BPMNPlane id="BPMNPlane_Process_Repair" bpmnElement="Process_Repair">
+      <bpmndi:BPMNShape id="BPMNShape_startEvent_bikeHandedIn" bpmnElement="startEvent_bikeHandedIn">
+        <dc:Bounds x="80" y="102" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="54" y="144" width="89" height="28" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="BPMNShape_userTask_inspectBike" bpmnElement="userTask_inspectBike">
+        <dc:Bounds x="176" y="80" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="BPMNShape_serviceTask_orderBrakePads" bpmnElement="serviceTask_orderBrakePads">
+        <dc:Bounds x="381" y="80" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="BPMNShape_serviceTask_orderTires" bpmnElement="serviceTask_orderTires">
+        <dc:Bounds x="381" y="280" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="BPMNShape_gateway_partsOrdered" bpmnElement="gateway_partsOrdered">
+        <dc:Bounds x="541" y="95" width="50" height="50" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="BPMNShape_endEvent_bikeRepaired" bpmnElement="endEvent_bikeRepaired">
+        <dc:Bounds x="651" y="102" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="635" y="144" width="68" height="28" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="BPMNEdge_flow_brakesWorn" bpmnElement="flow_brakesWorn">
+        <di:waypoint x="276" y="120" />
+        <di:waypoint x="381" y="120" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="284" y="102" width="89" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="BPMNEdge_flow_tiresWorn" bpmnElement="flow_tiresWorn">
+        <di:waypoint x="276" y="140" />
+        <di:waypoint x="329" y="140" />
+        <di:waypoint x="329" y="320" />
+        <di:waypoint x="381" y="320" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="278" y="122" width="82" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="BPMNEdge_flow_nothingWorn" bpmnElement="flow_nothingWorn">
+        <di:waypoint x="276" y="140" />
+        <di:waypoint x="366" y="140" />
+        <di:waypoint x="366" y="175" />
+        <di:waypoint x="566" y="175" />
+        <di:waypoint x="566" y="145" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="374" y="179" width="61" height="28" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="BPMNEdge_flow_bikeHandedInToInspectBike" bpmnElement="flow_bikeHandedInToInspectBike">
+        <di:waypoint x="116" y="120" />
+        <di:waypoint x="176" y="120" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="BPMNEdge_flow_brakePadsOrdered" bpmnElement="flow_brakePadsOrdered">
+        <di:waypoint x="481" y="120" />
+        <di:waypoint x="541" y="120" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="BPMNEdge_flow_tiresOrdered" bpmnElement="flow_tiresOrdered">
+        <di:waypoint x="481" y="320" />
+        <di:waypoint x="566" y="320" />
+        <di:waypoint x="566" y="145" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="BPMNEdge_flow_partsOrderedToBikeRepaired" bpmnElement="flow_partsOrderedToBikeRepaired">
+        <di:waypoint x="591" y="120" />
+        <di:waypoint x="651" y="120" />
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>

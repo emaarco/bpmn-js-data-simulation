@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from 'vitest'
 import type { DataStartForm } from '../../src/integration/DataStartForm'
 import type { DataSimulationStore } from '../../src/simulation/DataSimulationStore'
 import { type Harness, harnessFor } from './harness'
+import type { DecisionLogEntry } from '../../src/simulation/DataSimulationStore'
 
 const fixtures = [
   ['zeebe', 'fleet-zeebe.bpmn'],
@@ -149,6 +150,29 @@ describe('multi-instance loop cardinality', () => {
 
     expect(countEntered(harness, 'serviceTask_testRide')).toBe(1 + 2)
     expect(harness.entered[harness.entered.length - 1]).toBe('endEvent_fleetDelivered')
+  })
+})
+
+describe('multi-instance activity with conditional outgoing flows', () => {
+  it('routes by data once, after the last instance', async () => {
+    const harness = await harnessFor('repair-camunda7-multi-instance.bpmn', 'camunda7', {
+      scenarios: [
+        {
+          id: 'both-worn',
+          variables: {},
+          taskResults: { userTask_inspectBike: { brakesWorn: true, tiresWorn: true } },
+        },
+      ],
+    })
+    harness.trigger('startEvent_bikeHandedIn')
+
+    expect(countEntered(harness, 'userTask_inspectBike')).toBe(1 + 2)
+    expect(countEntered(harness, 'serviceTask_orderBrakePads')).toBe(1)
+    expect(countEntered(harness, 'serviceTask_orderTires')).toBe(1)
+    const decisions = harness.dataSimulation
+      .getSnapshot()
+      .log.filter((entry): entry is DecisionLogEntry => entry.kind === 'decision')
+    expect(decisions.map(entry => entry.elementId)).toEqual(['userTask_inspectBike'])
   })
 })
 
