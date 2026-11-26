@@ -69,6 +69,7 @@ runs Zeebe and Camunda 7 examples. Details: [usage](https://github.com/emaarco/b
 | No match or failed condition | The token waits at the gateway, marked red, until you fix the data                     |
 | Unsupported condition        | The gateway keeps the token simulation's click                                         |
 | Inspect                      | Gateway cards explain each decision; Process Data in the palette shows the variables   |
+| What-if                      | `resolve(variables)` marks the path the gateways take for that data, with no token     |
 
 ## Scenarios
 

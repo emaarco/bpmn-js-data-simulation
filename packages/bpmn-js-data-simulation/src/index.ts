@@ -5,6 +5,7 @@ export type {
   GatewayKind,
   Mapping,
   OutgoingFlow,
+  PathResolution,
   RoutingDecision,
   Scenario,
   StartField,
@@ -37,5 +38,5 @@ export type {
 export type { FormValues, RenderedStartForm, StartFormRenderer } from './ui/startForm.js'
 export { SimpleStartFormRenderer } from './ui/SimpleStartFormRenderer.js'
 
-export type { DataSimulation, DataSimulationConfig } from './integration/DataSimulation.js'
+export type { DataSimulation, DataSimulationConfig, ResolveOptions } from './integration/DataSimulation.js'
 export { default, type DataSimulationModuleDeclaration } from './integration/index.js'

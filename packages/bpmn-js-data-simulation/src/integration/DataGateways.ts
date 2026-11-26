@@ -1,7 +1,7 @@
 import type { FlowEvaluation, GatewayKind, OutgoingFlow, RoutingDecision } from '../domain/model.js'
 import { GatewayRouter } from '../domain/GatewayRouter.js'
 import type { ConditionInput, DataSimulationStore } from '../simulation/DataSimulationStore.js'
-import { elementName, findProcessInstance, is } from '../utils/diagramElements.js'
+import { elementName, findProcessInstance, outgoingSequenceFlows, readOutgoingFlow } from '../utils/diagramElements.js'
 import type { DataSimulation } from './DataSimulation.js'
 import type { BehaviorContext, DiagramElement, Scope, Simulator } from './tokenSimulation.js'
 
@@ -36,7 +36,7 @@ export class DataGateways {
       return
     }
     for (const flowId of decision.takenFlowIds) {
-      const flow = this.sequenceFlows(gateway).find(candidate => candidate.id === flowId)!
+      const flow = outgoingSequenceFlows(gateway).find(candidate => candidate.id === flowId)!
       this.simulator.enter({ element: flow, scope: scope.parent })
     }
   }
@@ -110,19 +110,6 @@ export class DataGateways {
 
   private outgoingFlows(gateway: DiagramElement): OutgoingFlow[] {
     const engine = this.dataSimulation.getEngine()
-    const defaultFlow = gateway.businessObject.default
-    return this.sequenceFlows(gateway).map(flow => {
-      const name = flow.businessObject.name
-      return {
-        id: flow.id,
-        ...(typeof name === 'string' && name ? { name } : {}),
-        expression: engine.readCondition(flow.businessObject),
-        isDefault: flow.businessObject === defaultFlow,
-      }
-    })
-  }
-
-  private sequenceFlows(gateway: DiagramElement): DiagramElement[] {
-    return (gateway.outgoing ?? []).filter(flow => is(flow, 'bpmn:SequenceFlow'))
+    return outgoingSequenceFlows(gateway).map(flow => readOutgoingFlow(flow, engine))
   }
 }
