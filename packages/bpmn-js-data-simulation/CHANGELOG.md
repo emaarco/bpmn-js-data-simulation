@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.4.0](https://github.com/emaarco/bpmn-js-data-simulation/compare/v0.3.0...v0.4.0) (2026-11-26)
+
+
+### Features
+
+* simulate the path without the token simulation ([#30](https://github.com/emaarco/bpmn-js-data-simulation/issues/30)) ([a5a167b](https://github.com/emaarco/bpmn-js-data-simulation/commit/a5a167bd2288783f71f3d388f50851768f116f44))
+* stateless what-if mode (variables → path) ([#27](https://github.com/emaarco/bpmn-js-data-simulation/issues/27)) ([08b1339](https://github.com/emaarco/bpmn-js-data-simulation/commit/08b1339234b4622430fe6daf59e834104fac6974))
+
+
+### Bug Fixes
+
+* **deps:** make bpmn-js-token-simulation an optional peer ([a5a167b](https://github.com/emaarco/bpmn-js-data-simulation/commit/a5a167bd2288783f71f3d388f50851768f116f44))
+
 ## [0.3.0](https://github.com/emaarco/bpmn-js-data-simulation/compare/v0.2.0...v0.3.0) (2026-11-04)
 
 
