@@ -4,7 +4,7 @@
 [![CI](https://github.com/emaarco/bpmn-js-data-simulation/actions/workflows/ci.yml/badge.svg)](https://github.com/emaarco/bpmn-js-data-simulation/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/github/license/emaarco/bpmn-js-data-simulation)](LICENSE)
 
-[![A Bike Order process starts from a scenario, its gateways decide by the data and a card shows why "Credit OK?" took "yes"; then, in the demo's what-if panel, dragging the order total above 5,000 sends the path through the manual review](docs/screenshots/simulation.gif)](https://emaarco.github.io/bpmn-js-data-simulation/)
+[![A Bike Order process starts from a scenario, its gateways decide by the data and a card shows why "Credit OK?" took "yes"; a Fleet Order then assembles four bikes in parallel and delivers to two sites one after the other, with a tag counting the instances; finally, in the demo's what-if panel, dragging the order total above 5,000 sends the path through the manual review](docs/screenshots/simulation.gif)](https://emaarco.github.io/bpmn-js-data-simulation/)
 
 **Show which path a process takes for real data, right in bpmn-js.**
 
