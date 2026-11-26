@@ -1,99 +1,87 @@
 # bpmn-js-data-simulation
 
-[![npm version](https://img.shields.io/npm/v/@emaarco/bpmn-js-data-simulation.svg)](https://www.npmjs.com/package/@emaarco/bpmn-js-data-simulation)
+[![npm](https://img.shields.io/npm/v/@emaarco/bpmn-js-data-simulation)](https://www.npmjs.com/package/@emaarco/bpmn-js-data-simulation)
 [![CI](https://github.com/emaarco/bpmn-js-data-simulation/actions/workflows/ci.yml/badge.svg)](https://github.com/emaarco/bpmn-js-data-simulation/actions/workflows/ci.yml)
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![License: MIT](https://img.shields.io/github/license/emaarco/bpmn-js-data-simulation)](LICENSE)
 
-An add-on for [bpmn-js-token-simulation](https://github.com/bpmn-io/bpmn-js-token-simulation) that runs BPMN
-processes **with data**: start variables, io mappings and gateway conditions, evaluated the way the
-engine would. No running engine, no clicking the path by hand.
+[![A Bike Order process starts from a scenario, its gateways decide by the data and a card shows why "Credit OK?" took "yes"; then, in the demo's what-if panel, dragging the order total above 5,000 sends the path through the manual review](docs/screenshots/simulation.gif)](https://emaarco.github.io/bpmn-js-data-simulation/)
 
-![Starting a Zeebe process with a scenario, hovering gateways to see why they took their flow, and fixing a missing variable to continue a stuck token](docs/screenshots/simulation.gif)
+**Show which path a process takes for real data, right in bpmn-js.**
+
+An add-on for the bpmn-js token simulation whose gateways decide by their conditions, the way Zeebe or Camunda 7 would. Pre-1.0: a minor release may still change the API.
 
 ## Why
 
-The token simulation shows which paths a process _can_ take. Gateways pick their flow by click, and
-conditions, default flows and io mappings are ignored. That explains BPMN, but not _why_ a process
-takes a path, and checking a condition still needs a deployed process and a running engine.
+Seeing the path a process takes for given data usually means deploying it. The token simulation needs no engine, but you click every gateway and it ignores conditions and mappings. This add-on evaluates them in the modeler, viewer or slide your readers see, within [known limits](docs/how-it-works.md#limits).
 
-bpmn-js-data-simulation evaluates what the process is modeled with:
+## What you get
 
-- **Shows why a path is taken.** Gateways that decided turn green; hover one and a card lists its
-  conditions, their results and the values they read. Click the gateway to keep the card open.
-- **What-if on the spot.** Start an instance from a scenario, change any value in the start dialog,
-  or edit the variables of a running instance.
-- **Behaves like the engine.** Zeebe conditions and mappings are FEEL, Camunda 7 ones JUEL, with
-  each engine's rules for task results and variables.
-- **Fails visibly.** When no flow matches or a condition fails, the token stops at the gateway and
-  it turns red, as an incident would; its card tells why. Fix the data and continue.
-- **Drop-in.** One more module next to the token simulation, in any bpmn-js modeler or viewer. A
-  **Data Simulation** switch next to the token simulation's own turns it off for the plain click-through.
+- **See why a path is taken:** gateways that decided turn green, and a card lists each condition, its result and the values it read.
+- **Show the path without running it:** `dataSimulation.resolve(variables)` marks the path the exclusive and inclusive gateways take, for example behind a slider ([what-if](docs/usage.md#what-if)).
+- **Start from a scenario:** the token simulation's ▶ opens a dialog prefilled from a [scenario file](docs/scenarios.md) that also mocks task results.
+- **Fail visibly:** if no flow matches or a condition fails, the token stops at a red gateway, like an incident.
+- **Works in modelers and viewers:** one more module next to the token simulation.
+
+## Supported engines
+
+The `engine` option, `'zeebe'` by default, picks how conditions and mappings are read:
+
+| Engine                         | `engine`     | Conditions                                 | Mappings              |
+| ------------------------------ | ------------ | ------------------------------------------ | --------------------- |
+| Zeebe (Camunda 8)              | `'zeebe'`    | FEEL                                       | `zeebe:ioMapping`     |
+| Camunda 7, Operaton, CIB seven | `'camunda7'` | [JUEL subset](docs/engines.md#juel-subset) | `camunda:inputOutput` |
+
+Conditions it cannot evaluate, such as JUEL method calls or scripts, fall back to a click and end the what-if path ([Engines](docs/engines.md)).
 
 ## Install
 
-```
-npm install @emaarco/bpmn-js-data-simulation
-```
-
-`bpmn-js` (>= 18) and `bpmn-js-token-simulation` (`^1.0.0`) are peer dependencies.
-
-## Quick start
-
-```ts
-import BpmnModeler from 'bpmn-js/lib/Modeler'
-import TokenSimulationModule from 'bpmn-js-token-simulation'
-import DataSimulationModule from '@emaarco/bpmn-js-data-simulation'
-import zeebeModdle from 'zeebe-bpmn-moddle/resources/zeebe.json'
-import 'bpmn-js-token-simulation/assets/css/bpmn-js-token-simulation.css'
-import '@emaarco/bpmn-js-data-simulation/assets/bpmn-js-data-simulation.css'
-
-const modeler = new BpmnModeler({
-  container: '#canvas',
-  additionalModules: [TokenSimulationModule, DataSimulationModule],
-  moddleExtensions: { zeebe: zeebeModdle },
-  dataSimulation: { engine: 'zeebe', scenarios },
-})
+```bash
+npm install @emaarco/bpmn-js-data-simulation bpmn-js-token-simulation zeebe-bpmn-moddle
 ```
 
-Switch on the token simulation and press ▶ on a start event: a dialog asks for the start variables
-the process reads, prefilled from a scenario. The [demo](https://emaarco.github.io/bpmn-js-data-simulation/)
-runs Zeebe and Camunda 7 examples. Details: [usage](docs/usage.md).
+It needs `bpmn-js` 18 or newer; for Camunda 7, install `camunda-bpmn-moddle` instead of `zeebe-bpmn-moddle`.
 
-## What it covers
+## Get started
 
-| Step                         | What happens                                                                           |
-| ---------------------------- | -------------------------------------------------------------------------------------- |
-| Start                        | ▶ opens a form with the variables the process reads; a scenario prefills it            |
-| Tasks                        | Input and output mappings write process variables; task results come from the scenario |
-| Gateways                     | Exclusive and inclusive gateways evaluate their conditions, including the default flow |
-| No match or failed condition | The token waits at the gateway, marked red, until you fix the data                     |
-| Unsupported condition        | The gateway keeps the token simulation's click                                         |
-| Inspect                      | Gateway cards explain each decision; Process Data in the palette shows the variables   |
-| What-if                      | `resolve(variables)` marks the path the gateways take for that data, with no token     |
+1. Register the module next to the token simulation:
 
-## Scenarios
+   ```ts
+   import BpmnModeler from 'bpmn-js/lib/Modeler'
+   import TokenSimulationModule from 'bpmn-js-token-simulation'
+   import DataSimulationModule from '@emaarco/bpmn-js-data-simulation'
+   import zeebeModdle from 'zeebe-bpmn-moddle/resources/zeebe.json'
+   import 'bpmn-js-token-simulation/assets/css/bpmn-js-token-simulation.css'
+   import '@emaarco/bpmn-js-data-simulation/assets/bpmn-js-data-simulation.css'
 
-Named sets of start variables and mocked task results, in a JSON file next to the diagram.
+   const modeler = new BpmnModeler({
+     container: '#canvas',
+     additionalModules: [TokenSimulationModule, DataSimulationModule],
+     moddleExtensions: { zeebe: zeebeModdle },
+     dataSimulation: { engine: 'zeebe' },
+   })
+   ```
 
-Details: [scenarios](docs/scenarios.md).
+   For a viewer or Camunda 7, swap the imports as in [Usage](docs/usage.md#set-up-the-modeler).
 
-## Zeebe and Camunda 7
+2. Turn on the **Token Simulation** switch at the top left and press ▶ on a start event.
+3. Fill in the variables, start, and hover a gateway to see why it decided.
 
-`engine: 'zeebe'` reads `zeebe:ioMapping` and evaluates FEEL; `engine: 'camunda7'` reads
-`camunda:inputOutput` and evaluates a subset of JUEL (also for Operaton and CIB seven).
+From code, `modeler.get('dataSimulation').resolve({ orderTotal: 6800 })` marks the path instead. Full walk-through: [Usage](docs/usage.md).
 
-Details: [engines](docs/engines.md).
+## Help and feedback
 
-## Documentation
-
-- [Usage](docs/usage.md): setup, start dialog, decision cards, Process Data and API
-- [Scenarios](docs/scenarios.md): the scenario file and task results
-- [Engines](docs/engines.md): Zeebe and Camunda 7 semantics, gateways, the JUEL subset
-- [How it works](docs/how-it-works.md): how it plugs into the token simulation, decisions and limits
+- **Documentation:** [Usage](docs/usage.md), [Scenarios](docs/scenarios.md), [Engines](docs/engines.md) and [How it works](docs/how-it-works.md).
+- **Demo:** [emaarco.github.io/bpmn-js-data-simulation](https://emaarco.github.io/bpmn-js-data-simulation/).
+- **Bugs and ideas:** [open an issue](https://github.com/emaarco/bpmn-js-data-simulation/issues).
 
 ## Contributing
 
-See [CONTRIBUTING.md](CONTRIBUTING.md).
+Contributions are welcome; see [CONTRIBUTING.md](CONTRIBUTING.md).
+
+## Credits
+
+- [bpmn-js-token-simulation](https://github.com/bpmn-io/bpmn-js-token-simulation) by bpmn.io moves the tokens.
+- [feelin](https://github.com/nikku/feelin) evaluates FEEL.
 
 ## License
 
