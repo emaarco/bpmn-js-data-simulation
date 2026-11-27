@@ -64,6 +64,19 @@ describe('PathVariableDeriver', () => {
     ])
   })
 
+  it('types a variable compared with another variable by a relational operator as a number', () => {
+    const conditions = [condition('=screeningScore >= minimumScore', 'screeningScore', 'minimumScore')]
+
+    expect(deriver.derive(conditions, { minimumScore: 70 })).toEqual([
+      { name: 'screeningScore', type: 'number', range: { min: 0, max: 200, step: 2 } },
+      { name: 'minimumScore', type: 'number', range: { min: 0, max: 100, step: 1 } },
+    ])
+    expect(deriver.derive([condition('${a == b}', 'a', 'b')], {})).toEqual([
+      { name: 'a', type: 'text' },
+      { name: 'b', type: 'text' },
+    ])
+  })
+
   it('takes the bounds the host sets for a number without a value', () => {
     const [variable] = deriver.derive([condition('=score >= 70', 'score')], {}, { score: { max: 100, step: 1 } })
 
