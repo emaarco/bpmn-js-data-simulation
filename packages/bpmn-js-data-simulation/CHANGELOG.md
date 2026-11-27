@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.7.0](https://github.com/emaarco/bpmn-js-data-simulation/compare/v0.6.0...v0.7.0) (2026-11-27)
+
+
+### Features
+
+* type path controls from the conditions and let a gateway wait for unset variables ([#43](https://github.com/emaarco/bpmn-js-data-simulation/issues/43)) ([23a8529](https://github.com/emaarco/bpmn-js-data-simulation/commit/23a85296139bcce204f841123a990fc2948e97a2))
+
 ## [0.6.0](https://github.com/emaarco/bpmn-js-data-simulation/compare/v0.5.0...v0.6.0) (2026-11-26)
 
 
