@@ -4,6 +4,7 @@ const NICE_STEPS = [1, 2, 5, 10]
 const RANGE_STEPS = 100
 const NUMBER_LITERAL = /(?<![\w.])\d+(?:\.\d+)?/g
 const COMPARISON = String.raw`(?:<=|>=|==|!=|<|>|=|\b(?:lt|gt|le|ge|eq|ne)\b)`
+const RELATIONAL = String.raw`(?:<=|>=|<|>|\b(?:lt|gt|le|ge)\b)`
 const EQUALITY = String.raw`(?:==|!=|=|\b(?:eq|ne)\b)`
 // Before a boolean operand: the start, a grouping (not a call) parenthesis, not(, !, and, or.
 const BOOLEAN_LEFT = String.raw`(?:^|(?<![\w$.])\(|\bnot\s*\(|!|&&|\|\||\b(?:and|or|not)\b)`
@@ -18,31 +19,35 @@ export class PathVariableDeriver {
     const names = [...new Set(conditions.flatMap(condition => condition.variableNames))]
     return names.map(name => {
       const conditionsReadingName = conditions.filter(condition => condition.variableNames.includes(name))
-      return this.variableFor(name, values[name], conditionsReadingName, rangeOverrides[name] ?? {})
+      return this.variableFor(name, values, conditionsReadingName, rangeOverrides[name] ?? {})
     })
   }
 
   private variableFor(
     name: string,
-    value: unknown,
+    values: Variables,
     conditionsReadingName: ConditionReads[],
     rangeOverride: Partial<NumberRange>,
   ): PathVariable {
+    const value = values[name]
     const type = value === undefined ? this.typeFromConditions(name, conditionsReadingName) : typeof value
     if (type === 'boolean') return { name, type: 'boolean' }
     if (type === 'number') {
-      const comparedNumbers = conditionsReadingName.flatMap(condition => this.numberLiterals(condition.expression))
+      const comparedNumbers = conditionsReadingName.flatMap(condition => [
+        ...this.numberLiterals(condition.expression),
+        ...this.numbersOfOtherVariables(name, condition, values),
+      ])
       return { name, type: 'number', range: this.rangeAround(Number(value ?? 0), comparedNumbers, rangeOverride) }
     }
     if (value === undefined || typeof value === 'string') return { name, type: 'text' }
     return { name, type: 'json' }
   }
 
-  // Without a value the conditions tell the type: compared with a number, or used as a condition of its own.
+  // Without a value the conditions tell the type: compared with a number or by <, <=, > or >=, or used as a condition of its own.
   private typeFromConditions(name: string, conditions: ConditionReads[]): 'number' | 'boolean' | undefined {
     const variable = String.raw`(?<![\w.$])${name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(?![\w.(])`
     const comparedWithNumber = new RegExp(
-      String.raw`${variable}\s*${COMPARISON}\s*-?\d|\d\s*${COMPARISON}\s*${variable}`,
+      String.raw`${variable}\s*${COMPARISON}\s*-?\d|\d\s*${COMPARISON}\s*${variable}|${variable}\s*${RELATIONAL}|${RELATIONAL}\s*${variable}`,
     )
     const usedAsBoolean = new RegExp(
       String.raw`${BOOLEAN_LEFT}\s*${variable}\s*${BOOLEAN_RIGHT}|${variable}\s*${EQUALITY}\s*(?:true|false)\b|\b(?:true|false)\s*${EQUALITY}\s*${variable}`,
@@ -72,6 +77,14 @@ export class PathVariableDeriver {
     if (value <= 0) return 1
     const magnitude = 10 ** Math.floor(Math.log10(value))
     return NICE_STEPS.find(step => step * magnitude >= value)! * magnitude
+  }
+
+  // The numbers the other variables of the condition hold, e.g. a minimum score the variable is compared with.
+  private numbersOfOtherVariables(name: string, condition: ConditionReads, values: Variables): number[] {
+    return condition.variableNames
+      .filter(otherName => otherName !== name)
+      .map(otherName => values[otherName])
+      .filter((otherValue): otherValue is number => typeof otherValue === 'number')
   }
 
   private numberLiterals(expression: string): number[] {
