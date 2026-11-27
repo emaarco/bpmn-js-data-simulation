@@ -65,10 +65,33 @@ describe.each(fixtures)('path simulation with %s, without the token simulation',
         { name: 'orderTotal', type: 'number', range: { min: 0, max: 10000, step: 100 } },
         { name: 'insurance', type: 'boolean' },
         { name: 'accessories', type: 'json' },
-        { name: 'approved', type: 'text' },
+        { name: 'approved', type: 'boolean' },
       ]),
     )
     expect(variables).toHaveLength(5)
+  })
+
+  it('types the controls from the conditions while no variable is set', async () => {
+    const { pathSimulation } = await harnessFor(fixture, engine)
+
+    expect(pathSimulation.deriveVariables({})).toEqual(
+      expect.arrayContaining([
+        { name: 'creditworthy', type: 'boolean' },
+        { name: 'orderTotal', type: 'number', range: { min: 0, max: 10000, step: 100 } },
+        { name: 'approved', type: 'boolean' },
+        { name: 'insurance', type: 'boolean' },
+      ]),
+    )
+  })
+
+  it('names the variables a gateway waits for and does not mark it stuck', async () => {
+    const { pathSimulation, markers } = await harnessFor(fixture, engine)
+
+    const path = pathSimulation.simulate({ creditworthy: true })
+
+    expect(path.decisions.gateway_credit.missingVariables).toEqual(['orderTotal'])
+    expect(markers('gateway_credit')).toEqual(['bds-path--taken'])
+    expect(markers('endEvent_rejected')).toEqual(['bds-path--skipped'])
   })
 
   it('spans a number over the range the host sets for it', async () => {
@@ -109,12 +132,13 @@ describe.each(fixtures)('path simulation with %s, without the token simulation',
 })
 
 describe('path simulation', () => {
-  it('marks a gateway that cannot decide and leaves everything behind it skipped', async () => {
+  it('marks a gateway that cannot decide with every variable set and leaves everything behind it skipped', async () => {
     const { pathSimulation, markers } = await harnessFor('order-zeebe.bpmn', 'zeebe')
 
-    const path = pathSimulation.simulate({ creditworthy: true })
+    const path = pathSimulation.simulate({ creditworthy: true, orderTotal: null })
 
     expect(path.decisions.gateway_credit.stuckReason).toMatch(/Condition of "yes" failed/)
+    expect(path.decisions.gateway_credit).not.toHaveProperty('missingVariables')
     expect(markers('gateway_credit')).toEqual(['bds-path--taken', 'bds-path--stuck'])
     expect(markers('endEvent_rejected')).toEqual(['bds-path--skipped'])
   })

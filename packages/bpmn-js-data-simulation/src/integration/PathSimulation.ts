@@ -1,4 +1,12 @@
-import type { ConditionReads, NumberRange, PathVariable, Scenario, SimulatedPath, Variables } from '../domain/model.js'
+import type {
+  ConditionReads,
+  Evaluation,
+  NumberRange,
+  PathVariable,
+  Scenario,
+  SimulatedPath,
+  Variables,
+} from '../domain/model.js'
 import { PathResolver } from '../domain/PathResolver.js'
 import { PathVariableDeriver } from '../domain/PathVariableDeriver.js'
 import { EngineRegistry } from '../engines/EngineRegistry.js'
@@ -42,7 +50,7 @@ export class PathSimulation {
 
   simulate(variables: Variables, options: PathSimulationOptions = {}): SimulatedPath {
     const graph = this.pathGraphReader.read(options.measures ?? [])
-    const path = this.pathResolver.resolve(graph, expression => this.engine.evaluate(expression, variables))
+    const path = this.pathResolver.resolve(graph, expression => this.evaluate(expression, variables))
     this.pathMarkers.show(path)
     return path
   }
@@ -57,6 +65,14 @@ export class PathSimulation {
 
   clear(): void {
     this.pathMarkers.clear()
+  }
+
+  // A failed condition names the variables it reads that are not set: the gateway then waits for data.
+  private evaluate(expression: string, variables: Variables): Evaluation {
+    const evaluation = this.engine.evaluate(expression, variables)
+    if (evaluation.ok) return evaluation
+    const missingVariables = this.engine.readVariableNames(expression).filter(name => variables[name] === undefined)
+    return missingVariables.length ? { ...evaluation, missingVariables } : evaluation
   }
 
   private evaluableConditions(): ConditionReads[] {

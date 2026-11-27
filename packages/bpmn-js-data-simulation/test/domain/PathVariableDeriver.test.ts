@@ -33,8 +33,41 @@ describe('PathVariableDeriver', () => {
       { name: 'segment', type: 'text' },
       { name: 'accessories', type: 'json' },
       { name: 'customer', type: 'json' },
-      { name: 'approved', type: 'text' },
+      { name: 'approved', type: 'boolean' },
     ])
+  })
+
+  it('types a variable without a value by how the conditions use it', () => {
+    const conditions = [
+      condition('=creditworthy and orderTotal <= 5000', 'creditworthy', 'orderTotal'),
+      condition('=not(approved)', 'approved'),
+      condition('${!hire}', 'hire'),
+      condition('${insured == true}', 'insured'),
+      condition('${score ge 70}', 'score'),
+      condition('=1000 < limit', 'limit'),
+      condition('=segment = "B2B"', 'segment'),
+      condition('=customer.vip', 'customer'),
+      condition('=count(accessories) > 0', 'accessories'),
+    ]
+
+    expect(deriver.derive(conditions, {})).toEqual([
+      { name: 'creditworthy', type: 'boolean' },
+      { name: 'orderTotal', type: 'number', range: { min: 0, max: 10000, step: 100 } },
+      { name: 'approved', type: 'boolean' },
+      { name: 'hire', type: 'boolean' },
+      { name: 'insured', type: 'boolean' },
+      { name: 'score', type: 'number', range: { min: 0, max: 200, step: 2 } },
+      { name: 'limit', type: 'number', range: { min: 0, max: 2000, step: 20 } },
+      { name: 'segment', type: 'text' },
+      { name: 'customer', type: 'text' },
+      { name: 'accessories', type: 'text' },
+    ])
+  })
+
+  it('takes the bounds the host sets for a number without a value', () => {
+    const [variable] = deriver.derive([condition('=score >= 70', 'score')], {}, { score: { max: 100, step: 1 } })
+
+    expect(variable).toEqual({ name: 'score', type: 'number', range: { min: 0, max: 100, step: 1 } })
   })
 
   it('spans the slider over the value or twice the numbers it is compared with, whichever is larger', () => {

@@ -18,7 +18,7 @@ export class PathMarkers {
     for (const id of path.taken) this.mark(id, TAKEN_MARKER)
     for (const id of path.skipped) this.mark(id, SKIPPED_MARKER)
     for (const [gatewayId, decision] of Object.entries(path.decisions)) {
-      if (decision.stuckReason) this.mark(gatewayId, STUCK_MARKER)
+      if (decision.stuckReason && !decision.missingVariables) this.mark(gatewayId, STUCK_MARKER)
     }
   }
 
