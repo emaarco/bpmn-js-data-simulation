@@ -32,6 +32,27 @@ describe('GatewayRouter (exclusive)', () => {
     expect(decision.flows.map(flow => flow.outcome)).toEqual(['not-taken', 'not-taken', 'taken'])
   })
 
+  it('names the variables a failed condition lacks', () => {
+    const missingTotal: Evaluation = {
+      ok: false,
+      reason: 'No variable found with name total',
+      missingVariables: ['total'],
+    }
+
+    const decision = router.route('exclusive', flows, conditions({ small: missingTotal, large: yes }))
+
+    expect(decision.takenFlowIds).toEqual([])
+    expect(decision.stuckReason).toBe('Condition of "small" failed: No variable found with name total')
+    expect(decision.missingVariables).toEqual(['total'])
+  })
+
+  it('names no missing variables when a condition fails for another reason', () => {
+    const decision = router.route('exclusive', flows, conditions({ small: { ok: false, reason: 'Unexpected token' } }))
+
+    expect(decision.stuckReason).toBe('Condition of "small" failed: Unexpected token')
+    expect(decision).not.toHaveProperty('missingVariables')
+  })
+
   it('gets stuck when no condition is true and there is no default flow', () => {
     const decision = router.route('exclusive', flows.slice(0, 2), conditions({ small: no, large: no }))
 

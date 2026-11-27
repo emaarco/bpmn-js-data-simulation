@@ -3,6 +3,11 @@ import type { ConditionReads, NumberRange, PathVariable, Variables } from './mod
 const NICE_STEPS = [1, 2, 5, 10]
 const RANGE_STEPS = 100
 const NUMBER_LITERAL = /(?<![\w.])\d+(?:\.\d+)?/g
+const COMPARISON = String.raw`(?:<=|>=|==|!=|<|>|=|\b(?:lt|gt|le|ge|eq|ne)\b)`
+const EQUALITY = String.raw`(?:==|!=|=|\b(?:eq|ne)\b)`
+// Before a boolean operand: the start, a grouping (not a call) parenthesis, not(, !, and, or.
+const BOOLEAN_LEFT = String.raw`(?:^|(?<![\w$.])\(|\bnot\s*\(|!|&&|\|\||\b(?:and|or|not)\b)`
+const BOOLEAN_RIGHT = String.raw`(?=$|\)|&&|\|\||\b(?:and|or)\b)`
 
 export class PathVariableDeriver {
   derive(
@@ -23,13 +28,37 @@ export class PathVariableDeriver {
     conditionsReadingName: ConditionReads[],
     rangeOverride: Partial<NumberRange>,
   ): PathVariable {
-    if (typeof value === 'boolean') return { name, type: 'boolean' }
-    if (typeof value === 'number') {
+    const type = value === undefined ? this.typeFromConditions(name, conditionsReadingName) : typeof value
+    if (type === 'boolean') return { name, type: 'boolean' }
+    if (type === 'number') {
       const comparedNumbers = conditionsReadingName.flatMap(condition => this.numberLiterals(condition.expression))
-      return { name, type: 'number', range: this.rangeAround(value, comparedNumbers, rangeOverride) }
+      return { name, type: 'number', range: this.rangeAround(Number(value ?? 0), comparedNumbers, rangeOverride) }
     }
     if (value === undefined || typeof value === 'string') return { name, type: 'text' }
     return { name, type: 'json' }
+  }
+
+  // Without a value the conditions tell the type: compared with a number, or used as a condition of its own.
+  private typeFromConditions(name: string, conditions: ConditionReads[]): 'number' | 'boolean' | undefined {
+    const variable = String.raw`(?<![\w.$])${name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(?![\w.(])`
+    const comparedWithNumber = new RegExp(
+      String.raw`${variable}\s*${COMPARISON}\s*-?\d|\d\s*${COMPARISON}\s*${variable}`,
+    )
+    const usedAsBoolean = new RegExp(
+      String.raw`${BOOLEAN_LEFT}\s*${variable}\s*${BOOLEAN_RIGHT}|${variable}\s*${EQUALITY}\s*(?:true|false)\b|\b(?:true|false)\s*${EQUALITY}\s*${variable}`,
+    )
+    const bodies = conditions.map(condition => this.body(condition.expression))
+    if (bodies.some(body => comparedWithNumber.test(body))) return 'number'
+    if (bodies.some(body => usedAsBoolean.test(body))) return 'boolean'
+    return undefined
+  }
+
+  // The expression without its FEEL `=` or its JUEL `${…}`.
+  private body(expression: string): string {
+    const trimmed = expression.trim()
+    const juel = /^\$\{([\s\S]*)\}$/.exec(trimmed)
+    if (juel) return juel[1].trim()
+    return trimmed.replace(/^=/, '').trim()
   }
 
   // The value itself is not doubled: a slider dragged to the end then keeps its range when derived again.

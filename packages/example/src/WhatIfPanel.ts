@@ -132,8 +132,9 @@ export class WhatIfPanel {
     if (variable.type === 'number') {
       const { min, max, step } = variable.range
       const range = { min: String(min), max: String(max), step: String(step) }
-      const slider = this.input(`${name}-slider`, { type: 'range', ...range, value: String(current) })
-      const exact = this.input(name, { type: 'number', step: 'any', value: String(current) })
+      const shown = current === undefined ? '' : String(current)
+      const slider = this.input(`${name}-slider`, { type: 'range', ...range, value: shown })
+      const exact = this.input(name, { type: 'number', step: 'any', value: shown })
       slider.addEventListener('input', () => {
         exact.value = slider.value
         this.update(name, slider.valueAsNumber)
@@ -176,8 +177,11 @@ export class WhatIfPanel {
     this.decisionList.replaceChildren(
       ...Object.entries(decisions).map(([gatewayId, decision]) => {
         const item = document.createElement('li')
-        item.classList.toggle('is-stuck', Boolean(decision.stuckReason))
-        const outcome = decision.stuckReason ?? decision.takenFlowIds.map(label).join(', ')
+        const waitsFor = decision.missingVariables?.join(', ')
+        item.classList.toggle('is-stuck', Boolean(decision.stuckReason) && !waitsFor)
+        const outcome = waitsFor
+          ? `waits for ${waitsFor}`
+          : (decision.stuckReason ?? decision.takenFlowIds.map(label).join(', '))
         item.append(
           Object.assign(document.createElement('span'), {
             className: 'app-whatif-gateway',

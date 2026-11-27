@@ -1,6 +1,7 @@
 export type Variables = Record<string, unknown>
 
-export type Evaluation = { ok: true; value: unknown } | { ok: false; reason: string }
+// A failed evaluation names the variables it read that are not set, so a caller can tell missing data from a broken condition.
+export type Evaluation = { ok: true; value: unknown } | { ok: false; reason: string; missingVariables?: string[] }
 
 export interface Mapping {
   source: string
@@ -25,12 +26,15 @@ export interface FlowEvaluation {
   outcome: FlowOutcome
   value?: unknown
   reason?: string
+  missingVariables?: string[]
 }
 
 export interface RoutingDecision {
   flows: FlowEvaluation[]
   takenFlowIds: string[]
   stuckReason?: string
+  // Set when the gateway is stuck only because these variables are not set yet: it waits for data.
+  missingVariables?: string[]
   refusedByEngine?: boolean
 }
 

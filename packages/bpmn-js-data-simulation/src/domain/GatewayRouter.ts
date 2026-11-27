@@ -15,11 +15,13 @@ export class GatewayRouter {
 
     const failed = evaluations.find(evaluation => evaluation.outcome === 'error')
     if (failed) {
-      return this.stuck(
+      const decision = this.stuck(
         evaluations,
         defaultFlow,
         `Condition of "${failed.flow.name ?? failed.flow.id}" failed: ${failed.reason}`,
       )
+      const missingVariables = [...new Set(evaluations.flatMap(evaluation => evaluation.missingVariables ?? []))]
+      return missingVariables.length ? { ...decision, missingVariables } : decision
     }
 
     const taken = evaluations.filter(evaluation => evaluation.outcome === 'taken')
@@ -56,7 +58,10 @@ export class GatewayRouter {
     }
     const evaluation = evaluateCondition(flow.expression)
     if (!evaluation.ok) {
-      return { flow, outcome: 'error', reason: evaluation.reason }
+      const { reason, missingVariables } = evaluation
+      return missingVariables
+        ? { flow, outcome: 'error', reason, missingVariables }
+        : { flow, outcome: 'error', reason }
     }
     if (typeof evaluation.value !== 'boolean') {
       return {
