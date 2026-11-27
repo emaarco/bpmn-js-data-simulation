@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.7.1](https://github.com/emaarco/bpmn-js-data-simulation/compare/v0.7.0...v0.7.1) (2026-11-27)
+
+
+### Bug Fixes
+
+* type a variable compared with another variable by &lt;, &lt;=, &gt; or &gt;= as a number ([#45](https://github.com/emaarco/bpmn-js-data-simulation/issues/45)) ([e0ae86d](https://github.com/emaarco/bpmn-js-data-simulation/commit/e0ae86d46d511a7fb2f974663ffe2dc278aa1df6))
+
 ## [0.7.0](https://github.com/emaarco/bpmn-js-data-simulation/compare/v0.6.0...v0.7.0) (2026-11-27)
 
 
